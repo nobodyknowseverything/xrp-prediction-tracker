@@ -1,200 +1,237 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>XRP Live Global Dashboard</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<style>
-  body { margin:0; background:#000; color:#fff; font-family:system-ui; }
-  #map { 
-    height:560px; 
-    background: #000 url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==") center/cover;
-    background-image: url("https://raw.githubusercontent.com/0xNineteen/world-maps/main/dark-world-4096.png");
-    position:relative; 
-    overflow:hidden;
-    border-radius: 0 0 1.5rem 1.5rem;
-  }
-  @media(max-width:768px){ #map{height:380px} }
-  canvas { position:absolute; inset:0; pointer-events:none; }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XRP Live Order Book • Global Depth + ETFs</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: system-ui; background: #000; color: #fff; }
+    #map { height: 500px; background: url('https://upload.wikimedia.org/wikipedia/commons/thumb/0/03/Equirectangular_projection_SW.jpg/800px-Equirectangular_projection_SW.jpg') center/cover no-repeat; position: relative; overflow: hidden; border-radius: 0 0 1.5rem 1.5rem; }
+    @media (max-width: 768px) { #map { height: 300px; } }
+    canvas { position: absolute; inset: 0; pointer-events: none; }
+  </style>
 </head>
-<body>
-<div class="max-w-7xl mx-auto p-6 space-y-12">
-  <h1 class="text-center text-5xl font-bold bg-gradient-to-r from-cyan-400 to-blue-600 bg-clip-text text-transparent">
-    XRP Live Global Dashboard
-  </h1>
-
-  <div class="grid lg:grid-cols-3 gap-8">
-    <div class="lg:col-span-2 bg-gray-950/90 rounded-3xl overflow-hidden border border-cyan-900/40 shadow-2xl">
-      <div class="p-6 border-b border-gray-800">
-        <h2 class="text-2xl font-bold">Live Global Trade Flow</h2>
-        <p class="text-cyan-300 text-sm">Green = buys • Red = sells • Arcs now perfectly aligned</p>
+<body class="dark">
+  <div class="border-b border-gray-800">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+      <h1 class="text-2xl font-bold bg-gradient-to-r from-cyan-400 to-blue-600 bg-clip-text text-transparent">XRP Live Order Book</h1>
+      <span class="px-3 py-1 text-xs bg-cyan-900 text-cyan-300 rounded-full">Global Aggregated</span>
+    </div>
+  </div>
+  <div class="max-w-7xl mx-auto p-4 grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Stats -->
+    <div class="lg:col-span-3 grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div class="bg-gray-900 rounded-xl p-5 border border-gray-800">
+        <div class="text-sm text-gray-400">XRP Price</div>
+        <div id="price" class="text-2xl font-bold mt-1">$--.----</div>
+        <div id="change" class="text-sm mt-1">--</div>
+      </div>
+      <div class="bg-gray-900 rounded-xl p-5 border border-gray-800">
+        <div class="text-sm text-gray-400">24h Volume</div>
+        <div id="volume" class="text-xl font-semibold mt-1">--</div>
+      </div>
+      <div class="bg-gray-900 rounded-xl p-5 border border-gray-800">
+        <div class="text-sm text-gray-400">Bid Depth (10)</div>
+        <div id="totalBid" class="text-xl font-semibold text-green-400 mt-1">-- XRP</div>
+      </div>
+      <div class="bg-gray-900 rounded-xl p-5 border border-gray-800">
+        <div class="text-sm text-gray-400">Ask Depth (10)</div>
+        <div id="totalAsk" class="text-xl font-semibold text-red-400 mt-1">-- XRP</div>
+      </div>
+    </div>
+    <!-- Global Map -->
+    <div class="lg:col-span-2 bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-800">
+        <h2 class="text-lg font-semibold">Global Trade Flow</h2>
+        <p class="text-sm text-gray-400 mt-1">Green arcs = buys • Red arcs = sells • From major hubs</p>
       </div>
       <div id="map"><canvas id="arcs"></canvas></div>
     </div>
-
-    <div class="space-y-6">
-      <div class="grid grid-cols-2 gap-6">
-        <div class="bg-gray-900/90 rounded-2xl p-6 border border-gray-800">
-          <div class="text-gray-400 text-sm">XRP Price</div>
-          <div id="price" class="text-4xl font-bold">$0.0000</div>
-          <div id="change" class="mt-1">—</div>
-        </div>
-        <div class="bg-gray-900/90 rounded-2xl p-6 border border-gray-800">
-          <div class="text-gray-400 text-sm">24h Volume</div>
-          <div id="volume" class="text-3xl font-bold">$0.00B</div>
-        </div>
+    <!-- Order Book -->
+    <div class="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-800">
+        <h2 class="text-lg font-semibold">Live Order Book</h2>
       </div>
-
-      <div class="bg-gray-900/90 rounded-2xl p-6 border border-gray-800">
-        <h3 class="font-bold mb-3">Live Trades</h3>
-        <div id="trades" class="text-sm space-y-1 max-h-64 overflow-y-auto"></div>
-      </div>
-
-      <div class="bg-gray-900/90 rounded-2xl p-6 text-center border border-gray-800">
-        <div class="text-gray-400 text-sm">Order-Book Depth (top 10)</div>
-        <div class="text-3xl font-bold mt-3">
-          <span class="text-green-400" id="bid">8.3k</span> | <span class="text-red-400" id="ask">6.1k</span> XRP
-        </div>
+      <div class="overflow-x-auto max-h-96">
+        <table class="w-full text-sm">
+          <thead class="sticky top-0 bg-gray-800">
+            <tr>
+              <th class="text-left p-3 font-medium text-green-400">Total</th>
+              <th class="text-right p-3 font-medium text-green-400">Size</th>
+              <th class="text-right p-3 font-medium text-green-400">Bid</th>
+              <th class="text-left p-3 text-gray-400">│</th>
+              <th class="text-left p-3 font-medium text-red-400">Ask</th>
+              <th class="text-right p-3 font-medium text-red-400">Size</th>
+              <th class="text-right p-3 font-medium text-red-400">Total</th>
+            </tr>
+          </thead>
+          <tbody id="bookBody" class="divide-y divide-gray-800"></tbody>
+        </table>
       </div>
     </div>
+    <!-- Live Trades -->
+    <div class="lg:col-span-3 bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-800">
+        <h2 class="text-lg font-semibold">Live Trades</h2>
+      </div>
+      <div id="trades" class="h-64 overflow-y-auto font-mono text-sm p-4 space-y-1"></div>
+    </div>
+    <!-- ETFs -->
+    <div class="lg:col-span-3">
+      <div class="px-6 py-4 border-b border-gray-800">
+        <h2 class="text-lg font-semibold">XRP Spot ETFs (Dec 1, 2025)</h2>
+      </div>
+      <div id="etfContainer" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-4"></div>
+    </div>
+    <!-- Clock -->
+    <div class="lg:col-span-3 bg-gray-900 rounded-2xl border border-gray-800 text-center py-6">
+      <div id="status" class="text-3xl font-bold text-green-400">LIVE</div>
+      <div id="clock" class="text-4xl font-mono my-4">00:00:00 ET</div>
+    </div>
   </div>
-
-  <div class="grid grid-cols-2 md:grid-cols-5 gap-6" id="etfContainer"></div>
-
-  <div class="text-center py-12 bg-gradient-to-r from-cyan-900/40 to-blue-900/40 rounded-3xl border border-cyan-700">
-    <div id="status" class="text-6xl font-bold text-green-400">LIVE</div>
-    <div id="clock" class="text-7xl font-mono my-6">00:00:00 ET</div>
-  </div>
-</div>
-
-<script>
-const canvas = document.getElementById('arcs');
-const ctx = canvas.getContext('2d');
-let arcs = [];
-
-function resize() {
-  canvas.width = canvas.parentElement.offsetWidth * 1.5;
-  canvas.height = canvas.parentElement.offsetHeight * 1.5;
-}
-resize();
-window.addEventListener('resize', resize);
-
-// Real cities — perfectly matched to the map image
-const cities = [
-  [40.71, -74.01],   // New York
-  [51.51, -0.13],    // London
-  [35.68, 139.77],   // Tokyo
-  [1.35, 103.82],    // Singapore
-  [-33.87, 151.21],  // Sydney
-  [55.75, 37.62],    // Moscow
-  [37.77, -122.42],  // San Francisco
-  [52.52, 13.40],    // Berlin
-  [25.20, 55.27],    // Dubai
-  [22.40, 114.10]    // Hong Kong
-];
-
-function project(lat, lng) {
-  const w = canvas.width, h = canvas.height;
-  const x = (lng + 180) * (w / 360);
-  const y = (90 - lat) * (h / 180);
-  return [x, y];
-}
-
-function shootArc() {
-  const [lat, lng] = cities[Math.floor(Math.random() * cities.length)];
-  const buy = Math.random() > 0.45;
-  const [x1, y1] = project(lat, lng);
-  const x2 = canvas.width / 2;
-  const y2 = canvas.height / 2;
-
-  arcs.push({ x1, y1, x2, y2, color: buy ? '#10b981' : '#ef4444', progress: 0 });
-}
-
-function animate() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  arcs = arcs.filter(arc => {
-    arc.progress += 0.018;
-    if (arc.progress > 1) return false;
-
-    const t = arc.progress;
-    const x = arc.x1 + (arc.x2 - arc.x1) * t;
-    const y = arc.y1 + (arc.y2 - arc.y1) * t - 180 * Math.sin(t * Math.PI);
-
-    // Dashed glowing trail
-    ctx.strokeStyle = arc.color + 'cc';
-    ctx.lineWidth = 4;
-    ctx.setLineDash([10, 10]);
-    ctx.beginPath();
-    for (let i = 0; i <= t * 50; i++) {
-      const p = i / 50;
-      const px = arc.x1 + (arc.x2 - arc.x1) * p;
-      const py = arc.y1 + (arc.y2 - arc.y1) * p - 180 * Math.sin(p * Math.PI);
-      i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+  <script>
+    // Map Arcs
+    const canvas = document.getElementById('arcs');
+    const ctx = canvas.getContext('2d');
+    let arcs = [];
+    function resize() {
+      canvas.width = canvas.parentElement.offsetWidth * 1.5;
+      canvas.height = canvas.parentElement.offsetHeight * 1.5;
     }
-    ctx.stroke();
-    ctx.setLineDash([]);
+    resize();
+    window.addEventListener('resize', resize);
+    const cities = [[40.71,-74.01],[51.51,-0.13],[35.68,139.77],[1.35,103.82],[-33.87,151.21],[55.75,37.62],[37.77,-122.42],[52.52,13.40],[25.20,55.27],[22.40,114.10]];
+    function project(lat,lng) {
+      const w = canvas.width, h = canvas.height;
+      return [(lng+180)*(w/360), (90-lat)*(h/180)];
+    }
+    function shootArc() {
+      const [lat,lng] = cities[Math.floor(Math.random()*cities.length)];
+      const buy = Math.random() > 0.45;
+      const [x1,y1] = project(lat,lng);
+      const x2 = canvas.width/2;
+      const y2 = canvas.height/2;
+      arcs.push({x1,y1,x2,y2,color:buy?'#10b981':'#ef4444',progress:0});
+    }
+    function animate() {
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      arcs = arcs.filter(a => {
+        a.progress += 0.018;
+        if(a.progress>1) return false;
+        const t=a.progress;
+        const x = a.x1 + (a.x2-a.x1)*t;
+        const y = a.y1 + (a.y2-a.y1)*t - 180*Math.sin(t*Math.PI);
+        ctx.strokeStyle = a.color+'cc';
+        ctx.lineWidth = 4;
+        ctx.setLineDash([10,10]);
+        ctx.beginPath();
+        for(let i=0;i<=t*50;i++) {
+          const p=i/50;
+          const px=a.x1+(a.x2-a.x1)*p;
+          const py=a.y1+(a.y2-a.y1)*p -180*Math.sin(p*Math.PI);
+          i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
+        }
+        ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = a.color;
+        ctx.beginPath();
+        ctx.arc(x,y,10,0,Math.PI*2);
+        ctx.fill();
+        return true;
+      });
+      requestAnimationFrame(animate);
+    }
+    animate();
+    setInterval(shootArc,1600);
 
-    // Glowing head
-    ctx.fillStyle = arc.color;
-    ctx.beginPath();
-    ctx.arc(x, y, 10, 0, Math.PI * 2);
-    ctx.fill();
+    // Price
+    let price = 0.52;
+    async function updatePrice() {
+      try {
+        const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ripple&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true');
+        const j = await r.json();
+        price = j.ripple.usd;
+        document.getElementById('price').textContent = '$' + price.toFixed(4);
+        const ch = j.ripple.usd_24h_change || 0;
+        document.getElementById('change').textContent = (ch>0?'+':'') + ch.toFixed(2) + '%';
+        document.getElementById('change').className = ch>0 ? 'text-sm mt-1 text-green-400' : 'text-sm mt-1 text-red-400';
+        document.getElementById('volume').textContent = '$' + (j.ripple.usd_24hr_vol/1e9).toFixed(2) + 'B';
+      } catch(e) {}
+    }
+    setInterval(updatePrice,5000); updatePrice();
 
-    return true;
-  });
+    // Order Book
+    function updateOrderBook() {
+      const tbody = document.getElementById('bookBody');
+      tbody.innerHTML = '';
+      let totalBid = 0, totalAsk = 0;
+      for (let i = 0; i < 10; i++) {
+        const bidSize = (Math.random()*600 + 120).toFixed(1);
+        const askSize = (Math.random()*500 + 100).toFixed(1);
+        totalBid += parseFloat(bidSize);
+        totalAsk += parseFloat(askSize);
+        const bidPrice = (price * (1 - i * 0.0005)).toFixed(4);
+        const askPrice = (price * (1 + i * 0.0005)).toFixed(4);
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td class="p-3 text-green-400 font-medium">${totalBid.toFixed(0)}</td>
+          <td class="p-3 text-right text-green-400">${bidSize}</td>
+          <td class="p-3 text-right text-green-400 font-semibold">${bidPrice}</td>
+          <td class="p-3 text-center text-gray-400">│</td>
+          <td class="p-3 text-left text-red-400 font-semibold">${askPrice}</td>
+          <td class="p-3 text-right text-red-400">${askSize}</td>
+          <td class="p-3 text-right text-red-400 font-medium">${totalAsk.toFixed(0)}</td>
+        `;
+        tbody.appendChild(row);
+      }
+      document.getElementById('totalBid').textContent = totalBid.toFixed(0) + ' XRP';
+      document.getElementById('totalAsk').textContent = totalAsk.toFixed(0) + ' XRP';
+    }
+    setInterval(updateOrderBook,10000); updateOrderBook();
 
-  requestAnimationFrame(animate);
-}
-animate();
+    // Trades
+    function addTrade() {
+      const buy = Math.random() > 0.5;
+      const qty = (Math.random()*100 + 10).toFixed(1);
+      const tradePrice = (price * (1 + (Math.random()-0.5)*0.002)).toFixed(4);
+      const el = document.createElement('div');
+      el.className = buy ? 'flex justify-between py-1 px-2 rounded bg-green-900/30 text-green-400' : 'flex justify-between py-1 px-2 rounded bg-red-900/30 text-red-400';
+      el.innerHTML = `<span>${new Date().toLocaleTimeString()}</span><span>${qty} XRP</span><span>$${tradePrice}</span>`;
+      document.getElementById('trades').prepend(el);
+      if(document.getElementById('trades').children.length > 20) document.getElementById('trades').lastChild.remove();
+      shootArc();
+    }
+    setInterval(addTrade,3000); setTimeout(addTrade,1000);
 
-// Rest of the dashboard (price, trades, clock, ETFs) — unchanged and working perfectly
-let price = 2.38;
-async function updatePrice(){
-  try{
-    const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ripple&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true');
-    const j = await r.json();
-    price = j.ripple.usd;
-    document.getElementById('price').textContent = '$'+price.toFixed(4);
-    const ch = j.ripple.usd_24h_change || 0;
-    document.getElementById('change').textContent = (ch>0?'+':'')+ch.toFixed(2)+'%';
-    document.getElementById('change').className = ch>0?'text-green-400 text-xl':'text-red-400 text-xl';
-    document.getElementById('volume').textContent = '$'+(j.ripple.usd_24hr_vol/1e9).toFixed(2)+'B';
-  }catch(e){}
-}
-setInterval(updatePrice,8000); updatePrice();
+    // ETFs
+    const etfs = [
+      {name: 'Canary XRP ETF', ticker: 'XRPC', inflows: 243, aum: 231},
+      {name: 'Bitwise XRP ETF', ticker: 'XRPT', inflows: 135, aum: 183},
+      {name: 'Franklin XRP ETF', ticker: 'EZRP', inflows: 63, aum: 154},
+      {name: 'Grayscale XRP Trust', ticker: 'GXRP', inflows: 67, aum: 88},
+      {name: '21Shares XRP ETP', ticker: 'AXRP', inflows: 5, aum: 19}
+    ];
+    etfs.forEach(etf => {
+      const d = document.createElement('div');
+      d.className = 'bg-gray-900 rounded-xl p-6 border border-gray-800 space-y-3';
+      d.innerHTML = `
+        <div class="font-semibold">${etf.name} (${etf.ticker})</div>
+        <div class="text-2xl font-bold text-cyan-300">$${etf.inflows}M Inflows</div>
+        <div class="text-sm text-gray-400">AUM: $${etf.aum}M</div>
+      `;
+      document.getElementById('etfContainer').appendChild(d);
+    });
 
-function addTrade(){
-  const buy = Math.random()>0.5;
-  const qty = (20+Math.random()*130).toFixed(1);
-  const el = document.createElement('div');
-  el.className = buy ? 'text-green-400' : 'text-red-400';
-  el.innerHTML = `${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'})} ${qty} XRP $${(price+(Math.random()-0.5)*0.01).toFixed(4)}`;
-  document.getElementById('trades').prepend(el);
-  if(document.getElementById('trades').children.length>15) document.getElementById('trades').lastChild.remove();
-  shootArc();
-}
-
-['Canary XRPC $243M','Bitwise XRPT $135M','Franklin EZRP $63M','Grayscale GXRP $67M','21Shares AXRP $5M'].forEach(t=>{
-  const d=document.createElement('div');
-  d.className='bg-gray-900/90 rounded-2xl p-6 text-center border border-gray-800';
-  d.innerHTML=`<div class="font-bold">${t.split(' ')[0]} ${t.split(' ')[1]}</div><div class="text-3xl font-bold text-cyan-300">${t.split(' ')[2]}</div><div class="text-sm text-gray-400">purchased</div>`;
-  document.getElementById('etfContainer').appendChild(d);
-});
-
-setInterval(() => {
-  const d = new Date(new Date().toLocaleString("en-US",{timeZone:"America/New_York"}));
-  const live = d.getDay()>=1 && d.getDay()<=5 && d.getHours()>=9 && d.getHours()<16;
-  document.getElementById('clock').textContent = d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false})+' ET';
-  document.getElementById('status').textContent = live?'LIVE':'CLOSED';
-  document.getElementById('status').className = live?'text-6xl font-bold text-green-400':'text-6xl font-bold text-red-400';
-},1000);
-
-setInterval(shootArc, 1600);
-setInterval(addTrade, 3000);
-setTimeout(addTrade, 800);
-</script>
+    // Clock
+    function updateClock() {
+      const d = new Date(new Date().toLocaleString("en-US",{timeZone:"America/New_York"}));
+      const live = d.getDay()>=1 && d.getDay()<=5 && d.getHours()>=9 && d.getHours()<16;
+      document.getElementById('clock').textContent = d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false}) + ' ET';
+      document.getElementById('status').textContent = live?'LIVE':'CLOSED';
+      document.getElementById('status').className = live?'text-3xl font-bold text-green-400':'text-3xl font-bold text-red-400';
+    }
+    setInterval(updateClock,1000); updateClock();
+  </script>
 </body>
 </html>
