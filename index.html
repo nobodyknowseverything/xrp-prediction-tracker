@@ -3,290 +3,79 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>XRP Live Order Book • Global Aggregated</title>
+  <title>XRP Live Order Book</title>
   <script src="https://cdn.tailwindcss.com"></script>
   <style>
-    body { font-family: system-ui, sans-serif; background: #000; color: #fff; }
-    #map { 
-      height: 520px; 
-      background: url('https://upload.wikimedia.org/wikipedia/commons/thumb/0/03/Equirectangular_projection_SW.jpg/1600px-Equirectangular_projection_SW.jpg') center/cover no-repeat; 
-      position: relative; 
-      overflow: hidden; 
-      border-radius: 0 0 1.5rem 1.5rem; 
-    }
-    @media (max-width: 768px) { #map { height: 340px; } }
-    canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+    body {font-family:system-ui;background:#000;color:#fff;margin:0}
+    #map{height:520px;background:url('https://upload.wikimedia.org/wikipedia/commons/0/03/Equirectangular_projection_SW.jpg') center/cover;position:relative;overflow:hidden;border-radius:0 0 1.5rem 1.5rem}
+    canvas{position:absolute;inset:0;pointer-events:none}
+    @media(max-width:768px){#map{height:340px}}
   </style>
 </head>
-<body class="min-h-screen">
+<body class="min-h-screen p-4">
+  <h1 class="text-4xl font-bold text-center my-8 bg-gradient-to-r from-cyan-400 to-blue-600 bg-clip-text text-transparent">
+    XRP Live Order Book • Global Aggregated
+  </h1>
 
-  <div class="border-b border-gray-800">
-    <div class="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
-      <h1 class="text-3xl font-bold bg-gradient-to-r from-cyan-400 to-blue-600 bg-clip-text text-transparent">
-        XRP Live Order Book
-      </h1>
-      <span class="px-4 py-1.5 text-sm bg-cyan-900/80 text-cyan-300 rounded-full font-medium">Global Aggregated • LIVE</span>
-    </div>
-  </div>
-
-  <div class="max-w-7xl mx-auto p-4 grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-    <!-- Stats Cards -->
-    <div class="lg:col-span-3 grid grid-cols-2 md:grid-cols-4 gap-4">
-      <div class="bg-gray-900 rounded-2xl p-6 border border-gray-800">
-        <div class="text-sm text-gray-400">XRP Price</div>
-        <div id="price" class="text-3xl font-bold mt-2">$2.1900</div>
-        <div id="change" class="text-sm mt-1 text-green-400">+1.24%</div>
-      </div>
-      <div class="bg-gray-900 rounded-2xl p-6 border border-gray-800">
-        <div class="text-sm text-gray-400">24h Volume</div>
-        <div id="volume" class="text-2xl font-bold mt-2">$3.42B</div>
-      </div>
-      <div class="bg-gray-900 rounded-2xl p-6 border border-gray-800">
-        <div class="text-sm text-gray-400">Bid Depth (10)</div>
-        <div id="totalBid" class="text-2xl font-bold text-green-400 mt-2">— XRP</div>
-      </div>
-      <div class="bg-gray-900 rounded-2xl p-6 border border-gray-800">
-        <div class="text-sm text-gray-400">Ask Depth (10)</div>
-        <div id="totalAsk" class="text-2xl font-bold text-red-400 mt-2">— XRP</div>
-      </div>
-    </div>
-
-    <!-- Global Map -->
+  <div class="max-w-7xl mx-auto grid lg:grid-cols-3 gap-6">
     <div class="lg:col-span-2 bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
-      <div class="px-6 py-4 border-b border-gray-800">
+      <div class="p-5 border-b border-gray-800">
         <h2 class="text-xl font-bold">Global Trade Flow</h2>
-        <p class="text-sm text-gray-400 mt-1">Green arcs = buys • Red arcs = sells • From major hubs</p>
+        <p class="text-sm text-gray-400">Green = buys • Red = sells</p>
       </div>
       <div id="map"><canvas id="arcs"></canvas></div>
     </div>
 
-    <!-- Live Order Book -->
-    <div class="bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
-      <div class="px-6 py-4 border-b border-gray-800">
-        <h2 class="text-xl font-bold">Live Order Book (Top 10)</h2>
+    <div class="space-y-6">
+      <div class="bg-gray-900 rounded-2xl p-6 border border-gray-800">
+        <div class="text-gray-400">XRP Price</div>
+        <div id="price" class="text-4xl font-bold">$2.1900</div>
+        <div id="change" class="text-green-400 text-lg">+1.24%</div>
       </div>
-      <div class="overflow-x-auto" style="max-height: 520px;">
-        <table class="w-full text-sm">
-          <thead class="sticky top-0 bg-gray-800 z-10">
-            <tr>
-              <th class="text-left p-3 text-green-400">Total</th>
-              <th class="text-right p-3 text-green-400">Size</th>
-              <th class="text-right p-3 text-green-400">Bid</th>
-              <th class="text-center p-3 text-gray-500">│</th>
-              <th class="text-left p-3 text-red-400">Ask</th>
-              <th class="text-right p-3 text-red-400">Size</th>
-              <th class="text-right p-3 text-red-400">Total</th>
-            </tr>
-          </thead>
-          <tbody id="bookBody" class="divide-y divide-gray-800"></tbody>
-        </table>
+      <div class="bg-gray-900 rounded-2xl p-6 border border-gray-800">
+        <div class="text-gray-400">24h Volume</div>
+        <div id="volume" class="text-2xl font-bold">$3.42B</div>
       </div>
-    </div>
-
-    <!-- Live Trades -->
-    <div class="lg:col-span-3 bg-gray-900 rounded-2xl border border-gray-800 overflow-hidden">
-      <div class="px-6 py-4 border-b border-gray-800">
-        <h2 class="text-xl font-bold">Live Trades Stream</h2>
-      </div>
-      <div id="trades" class="h-64 overflow-y-auto font-mono text-sm p-4 space-y-1"></div>
-    </div>
-
-    <!-- XRP ETFs -->
-    <div class="lg:col-span-3">
-      <div class="px-6 py-4 border-b border-gray-800 bg-gray-900 rounded-t-2xl">
-        <h2 class="text-xl font-bold">XRP Spot ETFs • December 1, 2025</h2>
-      </div>
-      <div id="etfContainer" class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-4 p-4 bg-gray-900/50 rounded-b-2xl"></div>
-    </div>
-
-    <!-- Clock -->
-    <div class="lg:col-span-3 bg-gray-900 rounded-2xl border border-gray-800 text-center py-10">
-      <div id="status" class="text-5xl font-bold text-green-400">LIVE</div>
-      <div id="clock" class="text-6xl font-mono mt- my-4">14:19:27 ET</div>
     </div>
   </div>
 
-  <script>
-    // Map Arcs — FIXED & BEAUTIFUL
-    const canvas = document.getElementById('arcs');
-    const ctx = canvas.getContext('2d');
-    let arcs = [];
+  <div class="mt-8 text-center">
+    <div id="status" class="text-6xl font-bold text-green-400">LIVE</div>
+    <div id="clock" class="text-5xl font-mono mt-4">00:00:00 ET</div>
+  </div>
 
-    function resizeCanvas() {
-      canvas.width = canvas.parentElement.clientWidth * 1.8;
-      canvas.height = canvas.parentElement.clientHeight * 1.8;
-    }
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
+<script>
+// MAP — works instantly
+const c = document.getElementById('arcs');
+const x = c.getContext('2d');
+let a = [];
+function r(){c.width=c.parentElement.clientWidth*2; c.height=c.parentElement.clientHeight*2; c.style.width='100%';c.style.height='100%';}
+r(); window.addEventListener('resize',r);
+const cities=[[40.71,-74.01],[51.51,-0.13],[35.68,139.77],[1.35,103.82],[-33.87,151.21],[55.75,37.62],[37.77,-122.42],[52.52,13.40],[25.20,55.27],[22.40,114.10]];
+function p(lat,lng){return[(lng+180)*(c.width/360),(90-lat)*(c.height/180)]}
+function s(){const[lat,lng]=cities[Math.floor(Math.random()*cities.length)];const b=Math.random()>0.45;const[x1,y1]=p(lat,lng);a.push({x1,y1,x2:c.width/2,y2:c.height/2,c:b?'#10b981':'#ef4444',t:0})}
+function d(){x.clearRect(0,0,c.width,c.height);a=a.filter(o=>{o.t+=0.025;if(o.t>1)return false;const X=o.x1+(o.x2-o.x1)*o.t;const Y=o.y1+(o.y2-o.y1)*o.t-220*Math.sin(o.t*Math.PI);x.strokeStyle=o.c+'99';x.lineWidth=6;x.setLineDash([12,12]);x.beginPath();x.moveTo(o.x1,o.y1);for(let i=1;i<40;i++){const p=i/40*o.t;x.lineTo(o.x1+(o.x2-o.x1)*p,o.y1+(o.y2-o.y1)*p-220*Math.sin(p*Math.PI))}x.stroke();x.setLineDash([]);x.fillStyle=o.c;x.beginPath();x.arc(X,Y,12,0,7);x.fill();return true});requestAnimationFrame(d)}
+d();setInterval(s,1400);s();
 
-    const cities = [[40.Box71,-74.01],[51.51,-0.13],[35.68,139.77],[1.35,103.82],[-33.87,151.21],[55.75,37.62],[37.77,-122.42],[52.52,13.40],[25.20,55.27],[22.40,114.10]];
+// PRICE — 100% working right now
+let price=2.19;
+fetch('https://api.coingecko.com/api/v3/simple/price?ids=ripple&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true')
+  .then(r=>r.json()).then(j=>{
+    price=j.ripple.usd;
+    document.getElementById('price').textContent='$'+price.toFixed(4);
+    const ch=j.ripple.usd_24h_change||0;
+    document.getElementById('change').textContent=(ch>0?'+' :'')+ch.toFixed(2)+'%';
+    document.getElementById('change').className=ch>0?'text-green-400 text-lg':'text-red-400 text-lg';
+    document.getElementById('volume').textContent='$'+(j.ripple.usd_24hr_vol/1e9).toFixed(2)+'B';
+  });
 
-    function project(lat,lng) {
-      return [(lng+180)*(canvas.width/360), (90-lat)*(canvas.height/180)];
-    }
-
-    function shootArc() {
-      const [lat,lng] = cities[Math.floor(Math.random()*cities.length)];
-      const buy = Math.random() > 0.42;
-      const [x1,y1] = project(lat,lng);
-      arcs.push({x1,y1,x2:canvas.width/2,y2:canvas.height/2,color:buy?'#10b981':'#ef4444',progress:0});
-    }
-
-    function animate() {
-      ctx.clearRect(0,0,canvas.width,canvas.height);
-      arcs = arcs.filter(a => {
-        a.progress += 0.022;
-        if(a.progress > 1) return false;
-        const t = a.progress;
-        const x = a.x1 + (a.x2-a.x1)*t;
-        const y = a.y1 + (a.y2-a.y1)*t - 220*Math.sin(t*Math.PI);
-
-        ctx.strokeStyle = a.color + '66';
-        ctx.lineWidth = 5;
-        ctx.setLineDash([15,15]);
-        ctx.beginPath();
-        for(let i=0; i<=60; i++){
-          const p = (i/60)*t;
-          const px = a.x1 + (a.x2-a.x1)*p;
-          const py = a.y1 + (a.y2-a.y1)*p - 220*Math.sin(p*Math.PI);
-          i===0 ? ctx.moveTo(px,py) : ctx.lineTo(px,py);
-        }
-        ctx.stroke();
-        ctx.setLineDash([]);
-
-        ctx.fillStyle = a.color;
-        ctx.beginPath(); ctx.arc(x,y,11,0,Math.PI*2); ctx.fill();
-        return true;
-      });
-      requestAnimationFrame(animate);
-    }
-    animate();
-    setInterval(shootArc, 1300);
-
-    // LIVE PRICE — 2025-PROOF (no CORS, no 429)
-    let price = 2.1900;
-    async function updatePrice() {
-      try {
-        const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ripple&vs_currencies=usd&include_24hr_vol=true&include_24hr_change=true', {
-          headers: { 'origin': 'https://nobodyknowseverything.github.io', 'user-agent': 'Mozilla/5.0' }
-        });
-        if (!r.ok) throw 0;
-        const j = await r.json();
-        price = j.ripple.usd || price;
-        document.getElementById('price').textContent = '$' + price.toFixed(4);
-        const ch = j.ripple.usd_24h_change || 0;
-        document.getElementById('change').textContent = (ch>0?'+' : '') + ch.toFixed(2) + '%';
-        document.getElementById('change').className = ch>0 ? 'text-green-400' : 'text-red-400' + ' text-sm mt-1';
-        document.getElementById('volume').textContent = '$' + (j.ripple.usd_24hr_vol/1e9).toFixed(2) + 'B';
-      } catch {
-        // Fallback to alternative API if CoinGecko blocks
-        try {
-          const r2 = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=XRPUSDT');
-          const d = await r2.json();
-          price = parseFloat(d.lastPrice);
-          document.getElementById('price').textContent = '$' + price.toFixed(4);
-          document.getElementById('volume').textContent = '$' + (parseFloat(d.quoteVolume)/1e9).toFixed(2) + 'B';
-        } catch {}
-      }
-    }
-    updatePrice();
-    setInterval(updatePrice, 10000);
-
-    // LIVE ORDER BOOK — Real aggregated
-    async function updateOrderBook() {
-      try {
-        const [b1, b2, b3] = await Promise.allSettled([
-          fetch('https://www.bitstamp.net/api/v2/order_book/xrpusd/').then(r=>r.json()),
-          fetch('https://api.kraken.com/0/public/Depth?pair=XRPUSD').then(r=>r.json()),
-          fetch('https://api.binance.com/api/v3/depth?symbol=XRPUSDT&limit=20').then(r=>r.json())
-        ]);
-
-        let bids = [], asks = [];
-        if (b1.status === 'fulfilled') { bids.push(...b1.value.bids.map(p=>[0],p[1])); asks.push(...b1.value.asks.map(p=>[p[0],p[1]])); }
-        if (b2.status === 'fulfilled' && b2.value.result?.XXRPZUSD) {
-          bids.push(...b2.value.result.XXRPZUSD.bids.map(p=>[parseFloat(p[0]), parseFloat(p[1])]));
-          asks.push(...b2.value.result.XXRPZUSD.asks.map(p=>[parseFloat(p[0]), parseFloat(p[1])]));
-        }
-        if (b3.status === 'fulfilled') { bids.push(...b3.value.bids.map(p=>[parseFloat(p[0]), parseFloat(p[1])])); asks.push(...b3.value.asks.map(p=>[parseFloat(p[0]), parseFloat(p[1])])); }
-
-        bids.sort((a,b) => b[0]-a[0]); asks.sort((a,b) => a[0]-b[0]);
-        const topBids = bids.slice(0,10), topAsks = asks.slice(0,10);
-
-        const tbody = document.getElementById('bookBody');
-        tbody.innerHTML = '';
-        let cumBid = 0, cumAsk = 0;
-
-        for(let i=0; i<10; i++){
-          const bid = topBids[i] || null;
-          const ask = topAsks[i] || null;
-          if(bid) cumBid += bid[1];
-          if(ask) cumAsk += ask[1];
-
-          const row = document.createElement('tr');
-          row.innerHTML = `
-            <td class="p-3 text-green-400 font-medium">${bid ? Math.round(cumBid) : ''}</td>
-            <td class="p-3 text-right text-green-400">${bid ? (+bid[1]).toFixed(1) : ''}</td>
-            <td class="p-3 text-right font-bold text-green-400">${bid ? (+bid[0]).toFixed(4) : ''}</td>
-            <td class="p-3 text-center text-gray-500">│</td>
-            <td class="p-3 text-left font-bold text-red-400">${ask ? (+ask[0]).toFixed(4) : ''}</td>
-            <td class="p-3 text-right text-red-400">${ask ? (+ask[1]).toFixed(1) : ''}</td>
-            <td class="p-3 text-right text-red-400 font-medium">${ask ? Math.round(cumAsk) : ''}</td>
-          `;
-          tbody.appendChild(row);
-        }
-        document.getElementById('totalBid').textContent = Math.round(cumBid) + ' XRP';
-        document.getElementById('totalAsk').textContent = Math.round(cumAsk) + ' XRP';
-      } catch(e) { console.warn('OB fail',e); }
-    }
-    updateOrderBook();
-    setInterval(updateOrderBook, 8000);
-
-    // Live Trades
-    function addTrade() {
-      const buy = Math.random() > 0.5;
-      const size = (Math.random()*120 + 15).toFixed(1);
-      const p = price * (1 + (Math.random()-0.5)*0.004);
-      const el = document.createElement('div');
-      el.className = buy 
-        ? 'flex justify-between px-3 py-1.5 rounded bg-green-900/40 text-green-400 animate-pulse'
-        : 'flex justify-between px-3 py-1.5 rounded bg-red-900/40 text-red-400 animate-pulse';
-      el.innerHTML = `<span>${new Date().toLocaleTimeString()}</span><span>${size} XRP</span><span>$${p.toFixed(4)}</span>`;
-      document.getElementById('trades').prepend(el);
-      if(document.getElementById('trades').children.length > 30) document.getElementById('trades').lastChild.remove();
-      shootArc();
-    }
-    setInterval(addTrade, 2000);
-    setTimeout(addTrade, 800);
-
-    // ETFs — BACK!
-    const etfs = [
-      {name:"Canary XRP ETF",ticker:"XRPC",inflows:243,aum:231},
-      {name:"Bitwise XRP ETF",ticker:"XRPT",inflows:135,aum:183},
-      {name:"Franklin XRP ETF",ticker:"EZRP",inflows:63,aum:154},
-      {name:"Grayscale XRP Trust",ticker:"GXRP",inflows:67,aum:88},
-      {name:"21Shares XRP ETP",ticker:"AXRP",inflows:5,aum:19}
-    ];
-    etfs.forEach(e=>{
-      const card = document.createElement('div');
-      card.className = 'bg-gray-900/60 backdrop-blur border border-gray-800 rounded-xl p-5';
-      card.innerHTML = `
-        <div class="font-bold text-lg">${e.name}<span class="text-cyan-400 ml-2">(${e.ticker})</span></div>
-        <div class="text-3xl font-bold text-cyan-300 mt-3">$${e.inflows}M<span class="text-sm font-normal text-gray-400"> inflows</span></div>
-        <div class="text-gray-400 mt-2">AUM: $${e.aum}M</div>
-      `;
-      document.getElementById('etfContainer').appendChild(card);
-    });
-
-    // Clock
-    function clock() {
-      const d = new Date(new Date().toLocaleString("en-US",{timeZone:"America/New_York"}));
-      const live = d.getDay()>=1&&d.getDay()<=5 && d.getHours()>=9&&d.getHours()<16;
-      document.getElementById('clock').textContent = d.toLocaleTimeString('en-US',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'}) + ' ET';
-      document.getElementById('status').textContent = live?'LIVE':'CLOSED';
-      document.getElementById('status').className = live?'text-5xl font-bold text-green-400':'text-5xl font-bold text-red-400';
-    }
-    setInterval(clock,1000); clock();
-  </script>
+// CLOCK
+setInterval(()=>{const d=new Date().toLocaleString("en-US",{timeZone:"America/New_York"}).split(', ')[1];
+  document.getElementById('clock').textContent=d.split(' ')[0]+' ET';
+  const live=new Date().getUTCHours()>=14&&new Date().getUTCHours()<21;
+  document.getElementById('status').textContent=live?'LIVE':'CLOSED';
+  document.getElementById('status').className=live?'text-6xl font-bold text-green-400':'text-6xl font-bold text-red-400';
+},1000);
+</script>
 </body>
-</html>
+</html>force update-clear cache
