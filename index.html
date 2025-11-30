@@ -115,6 +115,19 @@
         <!-- Populated by JS -->
       </div>
     </div>
+
+    <!-- ETF Trading Time Clock (Full Width Below ETFs) -->
+    <div class="lg:col-span-3 bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-800 overflow-hidden">
+      <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-800">
+        <h2 class="text-lg font-semibold">XRP ETF Trading Time Clock (ET)</h2>
+        <p class="text-sm text-gray-500 mt-1">Live during Mon–Fri 9:30 AM–4:00 PM ET | No trading weekends/holidays | Updates every second</p>
+      </div>
+      <div class="px-6 py-6 text-center space-y-4">
+        <div id="currentTime" class="text-3xl font-bold">--:--:-- --</div>
+        <div id="status" class="text-xl font-semibold">--</div>
+        <div id="nextSession" class="text-sm text-gray-500">--</div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -184,7 +197,7 @@
         console.error('Historical data load error:', e);
         // Fallback mock 1H data for 7 days (168 candles)
         const fallbackData = [];
-        for (let i = 0; i < 168; i++) { // 7 days * 24 hours
+        for (let i = 0; i < 168; i++) {
           const timestamp = Math.floor(Date.now() / 1000) - i * 3600;
           const open = price * (1 + (Math.random() - 0.5) * 0.005);
           const close = open * (1 + (Math.random() - 0.5) * 0.003);
@@ -308,6 +321,46 @@
       });
     }
 
+    // ETF Trading Time Clock
+    function updateTradingClock() {
+      const now = new Date();
+      const etOffset = -5 * 60 * 60 * 1000; // ET = UTC-5 (no DST for simplicity)
+      const etTime = new Date(now.getTime() + etOffset);
+      const dayOfWeek = etTime.getDay(); // 0 = Sunday, 6 = Saturday
+      const hours = etTime.getHours();
+      const minutes = etTime.getMinutes();
+      const seconds = etTime.getSeconds();
+      const ampm = hours >= 12 ? 'PM' : 'AM';
+      const displayHours = hours % 12 || 12;
+      document.getElementById('currentTime').textContent = `${displayHours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')} ${ampm} ET`;
+
+      let status = 'CLOSED';
+      let statusColor = 'text-red-500';
+      let nextSession = 'Next open: Monday 9:30 AM ET';
+      const isWeekday = dayOfWeek >= 1 && dayOfWeek <= 5; // Mon-Fri
+      const isTradingHours = isWeekday && hours >= 9 && hours < 16; // 9 AM - 4 PM ET (hours 9-15)
+      if (isWeekday && isTradingHours) {
+        status = 'LIVE';
+        statusColor = 'text-green-500';
+        nextSession = 'Closes at 4:00 PM ET';
+      } else if (dayOfWeek === 0 || dayOfWeek === 6) {
+        status = 'CLOSED – Weekend';
+        statusColor = 'text-gray-500';
+      } else if (hours < 9) {
+        const minsToOpen = (9 * 60 - (hours * 60 + minutes));
+        const h = Math.floor(minsToOpen / 60);
+        const m = minsToOpen % 60;
+        nextSession = `Opens in ${h}h ${m}m`;
+      } else if (hours >= 16) {
+        const minsToOpen = ((24 + 9 * 60) - (hours * 60 + minutes)) % (24 * 60);
+        const h = Math.floor(minsToOpen / 60);
+        const m = minsToOpen % 60;
+        nextSession = `Opens tomorrow in ${h}h ${m}m`;
+      }
+      document.getElementById('status').innerHTML = `<span class="${statusColor}">${status}</span>`;
+      document.getElementById('nextSession').textContent = nextSession;
+    }
+
     // Init & Loops
     setTimeout(initChart, 100);
     setTimeout(loadPriceData, 200);
@@ -315,6 +368,8 @@
     updateOrderBook();
     updateETFCards();
     addTrade();
+    updateTradingClock();
+    setInterval(updateTradingClock, 1000); // Every second for clock
 
     setInterval(updatePrice, 5000); // Every 5 seconds for live last candle update
     setInterval(loadPriceData, 300000); // Refresh full 7 days every 5 minutes
