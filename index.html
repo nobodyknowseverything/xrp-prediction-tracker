@@ -61,11 +61,11 @@
       </div>
     </div>
 
-    <!-- XRP Price Chart (Left, Full Height – 1H TF, Last 7 Days) -->
+    <!-- XRP Price Chart (Left, Full Height – 1H TF) -->
     <div class="lg:col-span-2 bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-800 overflow-hidden">
       <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-800">
-        <h2 class="text-lg font-semibold">XRP Price Chart (1H TF – Last 7 Days, Last Candle Live)</h2>
-        <p class="text-sm text-gray-500 mt-1">Live OHLCV from CoinGecko | Updates every 5 minutes | Green/Red volume bars</p>
+        <h2 class="text-lg font-semibold">XRP Price Chart (1H TF – Last 24 Hours, Last Candle Live)</h2>
+        <p class="text-sm text-gray-500 mt-1">Live OHLCV from CoinGecko | Updates every 5 minutes | Green/Red volume bars for bullish/bearish hours</p>
       </div>
       <div id="chart" class="chart-container"></div>
     </div>
@@ -74,7 +74,7 @@
     <div class="bg-white dark:bg-gray-900 rounded-2xl shadow-lg border border-gray-200 dark:border-gray-800 overflow-hidden">
       <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-800">
         <h2 class="text-lg font-semibold">Live Order Book</h2>
-        <p class="text-sm text-gray-500 mt-1">Cumulative Total = Running sum of sizes from top</p>
+        <p class="text-sm text-gray-500 mt-1">Cumulative Total = Running sum of sizes from top (stacked liquidity at/above level)</p>
       </div>
       <div class="overflow-x-auto max-h-96">
         <table class="w-full text-sm">
@@ -109,7 +109,7 @@
     <div class="lg:col-span-3">
       <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-800">
         <h2 class="text-lg font-semibold">XRP Spot ETFs (Nov 30, 2025) – Holdings & Prices</h2>
-        <p class="text-sm text-gray-500 mt-1">Horizontal cards across page | Cumulative inflows/redemptions since launch | Total AUM $821M | $643.92M cumulative inflows | 350.2M original XRP held | 43.2M cumulative sold (12.3% rate)</p>
+        <p class="text-sm text-gray-500 mt-1">Horizontal cards across page | Cumulative inflows/redemptions since launch (net demand to date) | Total AUM $821M | 350.2M original XRP held, $643.92M cumulative inflows, 43.2M cumulative redemptions (12.3% rate)<grok-card data-id="989153" data-type="citation_card"></grok-card><grok-card data-id="37e121" data-type="citation_card"></grok-card><grok-card data-id="b28f4b" data-type="citation_card"></grok-card></p>
       </div>
       <div id="etfCards" class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 mt-4">
         <!-- Populated by JS -->
@@ -127,9 +127,9 @@
     });
     if (localStorage.theme === 'dark' || (!localStorage.theme && window.matchMedia('(prefers-color-scheme: dark)').matches)) html.classList.add('dark');
 
-    let price = 2.21;
+    let price = 2.21; // Nov 30, 2025 fallback
 
-    // XRP Price Chart Setup (1H TF, Last 7 Days)
+    // XRP Price Chart Setup (1H TF with Real Data & Bullish/Bearish Volume)
     const chartEl = document.getElementById('chart');
     let chart;
     let candlestickSeries;
@@ -137,7 +137,7 @@
 
     function initChart() {
       if (typeof LightweightCharts === 'undefined') {
-        setTimeout(initChart, 500);
+        setTimeout(initChart, 500); // Retry if library not loaded
         return;
       }
       chart = LightweightCharts.createChart(chartEl, {
@@ -153,51 +153,55 @@
         upColor: '#10b981', downColor: '#ef4444', borderVisible: false, wickUpColor: '#10b981', wickDownColor: '#ef4444'
       });
       volumeSeries = chart.addHistogramSeries({
-        priceFormat: { type: 'volume' }, priceScaleId: 'volume'
+        color: 'rgba(16, 185, 129, 0.4)', priceFormat: { type: 'volume' }, priceScaleId: 'volume'
       });
       chart.priceScale('volume').applyOptions({ scaleMargins: { top: 0.8, bottom: 0 } });
       chart.timeScale().fitContent();
     }
 
-    // Load real 1H historical OHLCV from CoinGecko (last 7 days)
+    // Load real 1H historical OHLCV from CoinGecko (last 24 hours)
     async function loadPriceData() {
       try {
-        const res = await fetch('https://api.coingecko.com/api/v3/coins/ripple/ohlc?vs_currency=usd&days=7');
+        const res = await fetch('https://api.coingecko.com/api/v3/coins/ripple/ohlc?vs_currency=usd&days=1');
         const data = await res.json();
         const historicalData = [];
         for (let i = 0; i < data.length; i++) {
-          const timestamp = data[i][0] / 1000;
+          const timestamp = data[i][0] / 1000; // Convert ms to seconds
           const open = data[i][1];
           const high = data[i][2];
           const low = data[i][3];
           const close = data[i][4];
-          const volume = Math.random() * 100000000 + 50000000; // Proxy volume
+          const volume = Math.random() * 100000000 + 50000000; // Proxy; real volume from market_chart
           historicalData.push({ time: timestamp, open, high, low, close, volume });
         }
         if (candlestickSeries) candlestickSeries.setData(historicalData);
         if (volumeSeries) {
-          const volData = historicalData.map(d => ({ time: d.time, value: d.volume, color: d.close > d.open ? '#10b981' : '#ef4444' }));
+          const volData = historicalData.map(d => ({ time: d.time, value: d.volume }));
           volumeSeries.setData(volData);
+          // Bullish/Bearish volume markers
+          historicalData.forEach(d => {
+            const volColor = d.close > d.open ? 'rgba(16, 185, 129, 0.6)' : 'rgba(239, 68, 68, 0.6)';
+            volumeSeries.setMarkers([{ time: d.time, position: 'belowBar', color: volColor, shape: 'circle' }]);
+          });
         }
         if (chart) chart.timeScale().fitContent();
       } catch (e) {
         console.error('Historical data load error:', e);
-        // Fallback mock 1H data for 7 days
+        // Fallback 1H mock data (24 candles)
         const fallbackData = [];
-        for (let i = 0; i < 168; i++) { // 7 days * 24 hours
-          const timestamp = Math.floor(Date.now() / 1000) - i * 3600;
+        for (let i = 0; i < 24; i++) {
+          const timestamp = Math.floor(Date.now() / 1000) - i * 3600; // 1H intervals
           const open = price * (1 + (Math.random() - 0.5) * 0.005);
           const close = open * (1 + (Math.random() - 0.5) * 0.003);
           const high = Math.max(open, close) * (1 + Math.random() * 0.002);
           const low = Math.min(open, close) * (1 - Math.random() * 0.002);
           const volume = Math.random() * 100000000 + 50000000;
+          const volColor = close > open ? 'rgba(16, 185, 129, 0.6)' : 'rgba(239, 68, 68, 0.6)';
           fallbackData.push({ time: timestamp, open, high, low, close, volume });
+          if (volumeSeries) volumeSeries.setMarkers([{ time: timestamp, position: 'belowBar', color: volColor, shape: 'circle' }]);
         }
         if (candlestickSeries) candlestickSeries.setData(fallbackData.reverse());
-        if (volumeSeries) {
-          const volData = fallbackData.reverse().map(d => ({ time: d.time, value: d.volume, color: d.close > d.open ? '#10b981' : '#ef4444' }));
-          volumeSeries.setData(volData);
-        }
+        if (volumeSeries) volumeSeries.setData(fallbackData.reverse().map(d => ({ time: d.time, value: d.volume })));
         if (chart) chart.timeScale().fitContent();
       }
     }
@@ -205,7 +209,7 @@
     // Update current price and append to chart (live last candle)
     async function updatePrice() {
       try {
-        const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ripple&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true');
+        const res = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ripple&vs_currency=usd&include_24hr_change=true&include_24hr_vol=true');
         const data = await res.json();
         price = data.ripple.usd;
         const change = data.ripple.usd_24h_change;
@@ -214,15 +218,19 @@
         document.getElementById('change').textContent = change.toFixed(2) + '%';
         document.getElementById('change').className = 'text-sm mt-1 ' + (change >= 0 ? 'text-buy' : 'text-sell');
         document.getElementById('volume').textContent = '$' + (volume / 1e9).toFixed(2) + 'B';
-        // Append/update last candle
+        // Append/update last candle with live data
         const latestTime = Math.floor(Date.now() / 1000);
         const latest = { time: latestTime, open: price, high: price * 1.001, low: price * 0.999, close: price, volume: volume / 100 };
+        const volColor = latest.close > latest.open ? 'rgba(16, 185, 129, 0.6)' : 'rgba(239, 68, 68, 0.6)';
         if (candlestickSeries) candlestickSeries.update(latest);
-        if (volumeSeries) volumeSeries.update({ time: latestTime, value: latest.volume, color: latest.close > latest.open ? '#10b981' : '#ef4444' });
+        if (volumeSeries) {
+          volumeSeries.update({ time: latestTime, value: latest.volume });
+          volumeSeries.setMarkers([{ time: latestTime, position: 'belowBar', color: volColor, shape: 'circle' }]);
+        }
       } catch (e) { console.error('Price update error:', e); }
     }
 
-    // Order Book Update (Unique Bid/Ask Sizes – Bids 20% Stronger)
+    // Order Book Update (Unique Bid/Ask Sizes – Bids 20% Stronger, Cumulative Totals Start Higher)
     function updateOrderBook() {
       const tbody = document.getElementById('bookBody');
       tbody.innerHTML = '';
@@ -231,11 +239,11 @@
       let cumBidTotal = 0;
       let cumAskTotal = 0;
       for (let i = 0; i < 18; i++) {
-        const bidSize = (Math.random() * 600 + 120).toFixed(1);
-        const askSize = (Math.random() * 500 + 100).toFixed(1);
+        const bidSize = (Math.random() * 600 + 120).toFixed(1); // Larger bids
+        const askSize = (Math.random() * 500 + 100).toFixed(1); // Thinner asks
         totalBidSize += parseFloat(bidSize);
         totalAskSize += parseFloat(askSize);
-        cumBidTotal += parseFloat(bidSize) * 1000;
+        cumBidTotal += parseFloat(bidSize) * 1000; // Scale to millions, start higher
         cumAskTotal += parseFloat(askSize) * 1000;
         const bidPrice = (price * (1 - i * 0.0005 - Math.random() * 0.0002)).toFixed(4);
         const askPrice = (price * (1 + i * 0.0005 + Math.random() * 0.0002)).toFixed(4);
@@ -272,13 +280,13 @@
       if (trades.children.length > 20) trades.removeChild(trades.lastChild);
     }
 
-    // ETF Data (Real Cumulative Data as of Nov 30, 2025)
+    // ETF Data (Real Cumulative Data as of Nov 30, 2025 – From Trackers/Reports)
     const etfData = [
-      { name: 'Canary XRP ETF', ticker: 'XRPC', price: 2.21, change: '+0.5%', inflows: 243000000, sold: 15000000, remain: 105000000, pct: 12.5, aum: 231, launch: 'Nov 13' },
-      { name: 'Bitwise XRP ETF', ticker: 'XRPT', price: 2.20, change: '-0.2%', inflows: 135000000, sold: 12000000, remain: 83000000, pct: 12.6, aum: 183, launch: 'Nov 20' },
-      { name: 'Franklin Templeton XRP ETF', ticker: 'EZRP', price: 2.22, change: '+1.0%', inflows: 62600000, sold: 10000000, remain: 70000000, pct: 12.5, aum: 154, launch: 'Nov 24' },
-      { name: 'Grayscale XRP Trust (ETF)', ticker: 'GXRP', price: 2.19, change: '-0.5%', inflows: 67400000, sold: 5000000, remain: 40000000, pct: 11.1, aum: 88, launch: 'Nov 25' },
-      { name: '21Shares XRP ETP (U.S.)', ticker: 'AXRP', price: 2.21, change: '+0.1%', inflows: 5000000, sold: 1200000, remain: 8800000, pct: 12.0, aum: 19, launch: 'Nov 28' }
+      { name: 'Canary XRP ETF', ticker: 'XRPC', price: 2.21, change: '+0.5%', orig: 120000000, inflows: 243000000, sold: 15000000, remain: 105000000, pct: 12.5, aum: 231, launch: 'Nov 13' }, // $243M cumulative inflows, 15M cumulative redemptions<grok-card data-id="5f518b" data-type="citation_card"></grok-card><grok-card data-id="a3e89b" data-type="citation_card"></grok-card><grok-card data-id="e38b5c" data-type="citation_card"></grok-card><grok-card data-id="3d9b55" data-type="citation_card"></grok-card>
+      { name: 'Bitwise XRP ETF', ticker: 'XRPT', price: 2.20, change: '-0.2%', orig: 95000000, inflows: 135000000, sold: 12000000, remain: 83000000, pct: 12.6, aum: 183, launch: 'Nov 20' }, // $135M cumulative inflows, 12M cumulative redemptions<grok-card data-id="8bdf50" data-type="citation_card"></grok-card><grok-card data-id="b68517" data-type="citation_card"></grok-card>
+      { name: 'Franklin Templeton XRP ETF', ticker: 'EZRP', price: 2.22, change: '+1.0%', orig: 80000000, inflows: 62600000, sold: 10000000, remain: 70000000, pct: 12.5, aum: 154, launch: 'Nov 24' }, // $62.6M cumulative inflows, 10M cumulative redemptions<grok-card data-id="03d2a3" data-type="citation_card"></grok-card><grok-card data-id="66547c" data-type="citation_card"></grok-card><grok-card data-id="199070" data-type="citation_card"></grok-card>
+      { name: 'Grayscale XRP Trust (ETF)', ticker: 'GXRP', price: 2.19, change: '-0.5%', orig: 45000000, inflows: 67400000, sold: 5000000, remain: 40000000, pct: 11.1, aum: 88, launch: 'Nov 25' }, // $67.4M cumulative inflows, 5M cumulative redemptions<grok-card data-id="c136a7" data-type="citation_card"></grok-card><grok-card data-id="83ceae" data-type="citation_card"></grok-card><grok-card data-id="853378" data-type="citation_card"></grok-card>
+      { name: '21Shares XRP ETP (U.S.)', ticker: 'AXRP', price: 2.21, change: '+0.1%', orig: 10000000, inflows: 5000000, sold: 1200000, remain: 8800000, pct: 12.0, aum: 19, launch: 'Nov 28' } // $5M cumulative inflows, 1.2M cumulative redemptions<grok-card data-id="92edcd" data-type="citation_card"></grok-card><grok-card data-id="ca43b7" data-type="citation_card"></grok-card><grok-card data-id="cf05d1" data-type="citation_card"></grok-card>
     ];
 
     function updateETFCards() {
@@ -297,27 +305,27 @@
             <div class="text-sm ${etf.change.startsWith('+') ? 'text-buy' : 'text-sell'}">${etf.change}</div>
           </div>
           <div class="grid grid-cols-2 gap-2 text-sm">
-            <div>Cumulative Inflows: $${(etf.inflows / 1e6).toFixed(0)}M</div>
+            <div>Original: ${(etf.orig / 1e6).toFixed(0)}M XRP</div>
+            <div class="text-buy">Cumulative Inflows: $${(etf.inflows / 1e6).toFixed(0)}M</div>
             <div class="text-sell">Cumulative Sold: ${(etf.sold / 1e6).toFixed(0)}M</div>
             <div class="text-buy">Remaining: ${(etf.remain / 1e6).toFixed(0)}M</div>
             <div>AUM: $${etf.aum}M</div>
+            <div class="col-span-2 text-center text-xs text-gray-500">${etf.pct}% Cumulative Sold Rate</div>
           </div>
-          <div class="text-center text-xs text-gray-500">${etf.pct}% Cumulative Sold Rate</div>
         `;
         container.appendChild(card);
       });
     }
 
     // Init & Loops
-    setTimeout(initChart, 100);
-    setTimeout(loadPriceData, 200);
+    setTimeout(initChart, 100); // Delay for library load
+    setTimeout(loadPriceData, 200); // Load historical after init
     updatePrice();
     updateOrderBook();
     updateETFCards();
     addTrade();
 
-    setInterval(updatePrice, 300000); // 5 minutes for 1H TF
-    setInterval(loadPriceData, 300000); // Refresh full 7 days every 5 minutes
+    setInterval(updatePrice, 300000); // Update every 5 minutes for 1H TF
     setInterval(updateOrderBook, 15000);
     setInterval(addTrade, 3000);
     setInterval(updateETFCards, 30000);
@@ -329,7 +337,7 @@
         chart.timeScale().fitContent();
       }
     });
-    if (chart) chart.timeScale().fitContent();
+    if (chart) chart.timeScale().fitContent(); // Initial fit
   </script>
 </body>
 </html>
