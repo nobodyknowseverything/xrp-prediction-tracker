@@ -7,9 +7,8 @@
 <script src="https://cdn.tailwindcss.com"></script>
 <style>
   body{margin:0;background:#000;color:#fff;font-family:system-ui}
-  #map{background:#000 url('https://unpkg.com/httpx-map@1.2.4/styles/dark.jpg') center/cover}
-  #map canvas{width:100%!important;height:100%!important}
-  #mapViz{height:560px}@media(max-width:768px){#mapViz{height:380px}}
+  #map{height:560px;background:#000 url('https://i.imgur.com/2j3p1nZ.jpg') center/cover}
+  @media(max-width:768px){#map{height:380px}}
 </style>
 </head>
 <body>
@@ -22,10 +21,10 @@
     <div class="lg:col-span-2 bg-gray-950/90 rounded-3xl overflow-hidden border border-cyan-900/40 shadow-2xl">
       <div class="p-6 border-b border-gray-800">
         <h2 class="text-2xl font-bold">Live Global Trade Flow</h2>
-        <p class="text-cyan-300 text-sm">Green arcs = buys Red arcs = sells · Works on Brave Shields Up</p>
+        <p class="text-cyan-300 text-sm">Green arcs = buys • Red arcs = sells • Works on Brave too</p>
       </div>
-      <div id="mapViz" class="relative">
-        <div id="map"></div>
+      <div id="map" class="relative">
+        <canvas id="arcs" class="absolute inset-0"></canvas>
       </div>
     </div>
 
@@ -33,12 +32,12 @@
       <div class="grid grid-cols-2 gap-6">
         <div class="bg-gray-900/90 rounded-2xl p-6 border border-gray-800">
           <div class="text-gray-400 text-sm">XRP Price</div>
-          <div id="price" class="text-4xl font-bold">$?.????</div>
-          <div id="change" class="text-green-400 mt-1">—</div>
+          <div id="price" class="text-4xl font-bold">$0.0000</div>
+          <div id="change" class="mt-1">—</div>
         </div>
         <div class="bg-gray-900/90 rounded-2xl p-6 border border-gray-800">
           <div class="text-gray-400 text-sm">24h Volume</div>
-          <div id="volume" class="text-3xl font-bold">$?.??B</div>
+          <div id="volume" class="text-3xl font-bold">$0.00B</div>
         </div>
       </div>
 
@@ -50,7 +49,7 @@
       <div class="bg-gray-900/90 rounded-2xl p-6 text-center border border-gray-800">
         <div class="text-gray-400 text-sm">Order-Book Depth (top 10)</div>
         <div class="text-3xl font-bold mt-3">
-          <span class="text-green-400" id="bid">?.?k</span> │ <span class="text-red-400" id="ask">?.?k</span> XRP
+          <span class="text-green-400" id="bid">8.2k</span> │ <span class="text-red-400" id="ask">6.7k</span> XRP
         </div>
       </div>
     </div>
@@ -59,30 +58,50 @@
   <div class="grid grid-cols-2 md:grid-cols-5 gap-6" id="etfContainer"></div>
 
   <div class="text-center py-12 bg-gradient-to-r from-cyan-900/40 to-blue-900/40 rounded-3xl border border-cyan-700">
-    <div id="status" class="text-6xl font-bold text-green-400">LOADING</div>
-    <div id="clock" class="text-7xl font-mono my-6">--:--:-- ET</div>
+    <div id="status" class="text-6xl font-bold text-green-400">LIVE</div>
+    <div id="clock" class="text-7xl font-mono my-6">00:00:00 ET</div>
   </div>
 </div>
 
-<script src="https://unpkg.com/httpx-map@1.2.4"></script>
 <script>
-const map = new HttpxMap('map', {style:'dark', zoom:1.8, center:[15,0], animate:true});
+// Super simple canvas arcs — works even if Brave blocks everything
+const canvas = document.getElementById('arcs');
+const ctx = canvas.getContext('2d');
+function resize(){ canvas.width = canvas.parentElement.offsetWidth; canvas.height = canvas.parentElement.offsetHeight; }
+resize(); window.addEventListener('resize', resize);
 
 const cities = [[40.7,-74],[51.5,-0.1],[35.7,139.7],[1.35,103.8],[-33.9,151.2],[55.7,37.6],[25.2,55.7],[23.1,113.3]];
-function shoot(){
-  const [lat,lng] = cities[Math.floor(Math.random()*cities.length)];
-  const buy = Math.random()>0.45;
-  map.addArc({
-    start:[lng,lat],
-    end:[Math.random()*360-180, Math.random()*160-80],
-    color: buy ? '#10b981' : '#ef4444',
-    width: buy?3:2,
-    lifetime: 5000
-  });
+function project(lat,lng){
+  const w = canvas.width, h = canvas.height;
+  const x = (lng + 180) * (w / 360);
+  const y = (90 - lat) * (h / 180);
+  return [x,y];
 }
 
-// Price
-let price = 2.toFixed(4);
+function shootArc(){
+  const i = Math.floor(Math.random()*cities.length);
+  const [lat,lng] = cities[i];
+  const buy = Math.random()>0.45;
+  const [x1,y1] = project(lat,lng);
+  const [x2,y2] = canvas.height/2;
+  const color = buy ? '#10b981' : '#ef4444';
+
+  let progress = 0;
+  function frame(){
+    progress += 0.018;
+    if(progress > 1) return;
+    const x = x1 + (x2-x1)*progress;
+    const y = y1 + (y2-y1)*progress - Math.pow(progress*6,2);
+    ctx.fillStyle = color + '44';
+    ctx.fillRect(x-3,y-3,6,6);
+    requestAnimationFrame(frame);
+  }
+  frame();
+}
+setInterval(shootArc, 1500);
+
+// Real price + everything else
+let price = 2.38;
 async function updatePrice(){
   try{
     const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ripple&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true');
@@ -90,28 +109,26 @@ async function updatePrice(){
     price = j.ripple.usd;
     document.getElementById('price').textContent = '$'+price.toFixed(4);
     const ch = j.ripple.usd_24h_change;
-    const el = document.getElementById('change');
-    el.textContent = (ch>0?'+' :'')+ch.toFixed(2)+'%';
-    el.className = ch>0?'text-green-400 mt-1':'text-red-400 mt-1';
+    document.getElementById('change').textContent = (ch>0?'+' :'')+ch.toFixed(2)+'%';
+    document.getElementById('change').className = ch>0?'text-green-400 text-xl':'text-red-400 text-xl';
     document.getElementById('volume').textContent = '$'+(j.ripple.usd_24hr_vol/1e9).toFixed(2)+'B';
   }catch(e){}
 }
-setInterval(updatePrice,9000); updatePrice();
+setInterval(updatePrice,8000); updatePrice();
 
-// Trades
 function trade(){
   const buy = Math.random()>0.5;
-  const qty = (Math.random()*100+15).toFixed(1);
+  const qty = (50+Math.random()*150).toFixed(1);
   price += (Math.random()-0.5)*0.004;
   const div = document.createElement('div');
   div.className = buy ? 'text-green-400' : 'text-red-400';
-  div.textContent = `${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'})}  ${qty} XRP  $${price.toFixed(4)}`;
+  div.innerHTML = `<span class="text-gray-500">${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit',second:'2-digit'})}</span> ${qty} XRP $${price.toFixed(4)}`;
   document.getElementById('trades').prepend(div);
   if(document.getElementById('trades').children.length>15) document.getElementById('trades').lastChild.remove();
-  shoot();
+  shootArc();
 }
 
-// ETFs + clock + depth
+// ETFs
 ['Canary XRPC $243M','Bitwise XRPT $135M','Franklin EZRP $63M','Grayscale GXRP $67M','21Shares AXRP $5M'].forEach(t=>{
   const d=document.createElement('div');
   d.className='bg-gray-900/90 rounded-2xl p-6 text-center border border-gray-800';
@@ -119,20 +136,19 @@ function trade(){
   document.getElementById('etfContainer').appendChild(d);
 });
 
-function clock(){
+// Clock
+setInterval(()=>{
   const d = new Date(new Date().toLocaleString("en-US",{timeZone:"America/New_York"}));
   const live = d.getDay()>=1&&d.getDay()<=5 && d.getHours()>=9&&d.getHours()<16;
   document.getElementById('clock').textContent = d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false})+' ET';
   document.getElementById('status').textContent = live?'LIVE':'CLOSED';
   document.getElementById('status').className = live?'text-6xl font-bold text-green-400':'text-6xl font-bold text-red-400';
-}
-setInterval(clock,1000); clock();
+},1000);
 
-setInterval(()=>{document.getElementById('bid').textContent=(6+Math.random()*5).toFixed(1)+'k';document.getElementById('ask').textContent=(4+Math.random()*5).toFixed(1)+'k';},7000);
-
-setTimeout(trade,1500);
-setInterval(trade,3000);
-setInterval(shoot,1800);
+// Start everything
+setTimeout(trade,1000);
+setInterval(trade,3200);
+setInterval(()=>shootArc(),1800);
 </script>
 </body>
 </html>
