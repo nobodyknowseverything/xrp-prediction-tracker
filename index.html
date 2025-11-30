@@ -1,225 +1,175 @@
 <!DOCTYPE html>
 <html lang="en" class="dark">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>XRP Live Global Dashboard</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://unpkg.com/three@0.154.0/build/three.min.js"></script>
-  <script src="https://unpkg.com/three@0.154.0/examples/js/controls/OrbitControls.js"></script>
-  <script src="https://unpkg.com/three-globe@2.27.2/dist/three-globe.min.js"></script>
-  <style>
-    body { margin:0; font-family:system-ui; overflow-x:hidden; }
-    #globeViz { width:100%; height:520px; }
-    @media (max-width:768px){ #globeViz{height:340px} }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>XRP Live Global Dashboard</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://unpkg.com/three@0.154.0/build/three.min.js"></script>
+<script src="https://unpkg.com/three@0.154.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://unpkg.com/three-globe@2.27.2/dist/three-globe.min.js"></script>
+<style>
+  body{margin:0;background:#000;color:#fff;font-family:system-ui}
+  #globeViz{width:100%;height:520px}
+  @media(max-width:768px){#globeViz{height:340px}}
+</style>
 </head>
-<body class="bg-black text-white">
+<body class="min-h-screen bg-black">
 
-<div class="max-w-7xl mx-auto p-4">
+<div class="max-w-7xl mx-auto p-6 space-y-10">
 
-  <!-- Header -->
-  <div class="flex justify-between items-center mb-8">
-    <h1 class="text-4xl font-bold bg-gradient-to-r from-cyan-400 to-blue-500 bg-clip-text text-transparent">
-      XRP Live Global Dashboard
-    </h1>
-    <button id="theme" class="p-3 rounded-xl bg-gray-800">Moon/Sun</button>
-  </div>
+  <h1 class="text-center text-5xl font-bold bg-gradient-to-r from-cyan-400 to-blue-600 bg-clip-text text-transparent">
+    XRP Live Global Dashboard
+  </h1>
 
-  <div class="grid lg:grid-cols-3 gap-6">
+  <div class="grid lg:grid-cols-3 gap-8">
 
-    <!-- 3D Globe -->
-    <div class="lg:col-span-2 bg-gray-950 rounded-3xl overflow-hidden shadow-2xl">
-      <div class="p-5 border-b border-gray-800">
+    <!-- Globe -->
+    <div class="lg:col-span-2 bg-gray-950 rounded-3xl overflow-hidden border border-cyan-900/50">
+      <div class="p-6 border-b border-gray-800">
         <h2 class="text-2xl font-bold">Live Global Trade Flow</h2>
-        <p class="text-gray-400 text-sm">Green arcs = buys Red arcs = sells</p>
+        <p class="text-cyan-400">Green = Buy Red = Sell</p>
       </div>
       <div id="globeViz"></div>
     </div>
 
-    <!-- Right column -->
+    <!-- Right Side -->
     <div class="space-y-6">
 
-      <!-- Price cards -->
-      <div class="grid grid-cols-2 gap-4">
-        <div class="bg-gray-900 rounded-2xl p-6">
+      <div class="grid grid-cols-2 gap-6">
+        <div class="bg-gray-900/90 rounded-2xl p-6 border border-gray-800">
           <div class="text-gray-400">Price</div>
-          <div id="price" class="text-3xl font-bold">$2.2100</div>
+          <div id="price" class="text-4xl font-bold">$2.2100</div>
           <div id="change" class="text-green-400">+0.63%</div>
         </div>
-        <div class="bg-gray-900 rounded-2xl p-6">
+        <div class="bg-gray-900/90 rounded-2xl p-6 border border-gray-800">
           <div class="text-gray-400">24h Volume</div>
-          <div id="volume" class="text-2xl font-bold">$2.00B</div>
+          <div id="volume" class="text-3xl font-bold">$2.00B</div>
         </div>
       </div>
 
-      <!-- Live trades -->
-      <div class="bg-gray-900 rounded-2xl p-5">
+      <div class="bg-gray-900/90 rounded-2xl p-6 border border-gray-800">
         <h3 class="font-bold mb-3">Live Trades</h3>
-        <div id="trades" class="space-y-2 text-sm font-mono max-h-64 overflow-y-auto"></div>
+        <div id="trades" class="space-y-2 text-sm max-h-64 overflow-y-auto"></div>
       </div>
 
-      <!-- Order book snippet -->
-      <div class="bg-gray-900 rounded-2xl p-5">
-        <h3 class="font-bold mb-3">Order Book Depth</h3>
-        <div class="text-2xl"><span class="text-green-400" id="bidDepth">8.4k</span> │ <span class="text-red-400" id="askDepth">6.7k</span> XRP</div>
+      <div class="bg-gray-900/90 rounded-2xl p-6 text-center border border-gray-800">
+        <div class="text-gray-400">Order-Book Depth</div>
+        <div class="text-3xl font-bold mt-2">
+          <span class="text-green-400" id="bid">8.4k</span> │ 
+          <span class="text-red-400" id="ask">6.7k</span> XRP
+        </div>
       </div>
     </div>
   </div>
 
-  <!-- ETF Cards -->
-  <div class="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-5 my-8" id="etfCards"></div>
+  <!-- ETFs -->
+  <div class="grid grid-cols-2 md:grid-cols-5 gap-6" id="etfs"></div>
 
-  <!-- Big Clock -->
-  <div class="text-center py-8 bg-gradient-to-r from-cyan-900 to-blue-900 rounded-3xl">
-    <div class="text-5xl font-bold" id="status">LIVE</div>
-    <div class="text-6xl font-mono my-4" id="clock">--:--:-- ET</div>
-    <div class="text-xl" id="next"></div>
+  <!-- Clock -->
+  <div class="text-center py-12 bg-gradient-to-r from-cyan-900/50 to-blue-900/50 rounded-3xl border border-cyan-700">
+    <div id="status" class="text-6xl font-bold text-green-400">LIVE</div>
+    <div id="clock" class="text-7xl font-mono my-6">--:--:-- ET</div>
   </div>
+
 </div>
 
 <script>
-// Theme toggle
-document.getElementById('theme').onclick = () => document.documentElement.classList.toggle('dark');
-
-// 3D Globe
+// Globe
 const Globe = new ThreeGlobe()
   .globeImageUrl('https://unpkg.com/three-globe/example/img/earth-blue-marble.jpg')
   .bumpImageUrl('https://unpkg.com/three-globe/example/img/earth-topology.png')
   .backgroundImageUrl('https://unpkg.com/three-globe/example/img/night-sky.png')
-  .showAtmosphere(true)
-  .atmosphereColor('#00ffff')
-  .atmosphereAltitude(0.2);
+  .showAtmosphere(true);
 
 const scene = new THREE.Scene();
 scene.add(Globe);
-scene.add(new THREE.AmbientLight(0xcccccc));
+scene.add(new THREE.AmbientLight(0xbbbbbb));
 scene.add(new THREE.DirectionalLight(0xffffff, 0.8));
 
 const camera = new THREE.PerspectiveCamera();
-camera.aspect = window.innerWidth/window.innerHeight;
-camera.updateProjectionMatrix();
-camera.position.z = 320;
+camera.position.z = 300;
 
-const renderer = new THREE.WebGLRenderer({antialias:true, alpha:true});
-renderer.setSize(window.innerWidth, 600);
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(1200,600);
 document.getElementById('globeViz').appendChild(renderer.domElement);
 
 const controls = new THREE.OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
 controls.autoRotate = true;
 controls.autoRotateSpeed = 0.6;
 
-(function animate(){
-  controls.update();
-  Globe.rotation.y += 0.001;
-  renderer.render(scene, camera);
-  requestAnimationFrame(animate);
-})();
+(function animate(){controls.update(); Globe.rotation.y+=0.001; renderer.render(scene,camera); requestAnimationFrame(animate);})();
 
-window.addEventListener('resize',()=>{
+window.onresize = () => {
   camera.aspect = window.innerWidth/window.innerHeight;
   camera.updateProjectionMatrix();
-  renderer.setSize(window.innerWidth, 600);
-});
+  renderer.setSize(window.innerWidth, document.getElementById('globeViz').offsetHeight);
+};
 
-// Real country coordinates
-const spots = [
-  {lat:40.71,lng:-74.01},{lat:51.51,lng:-0.13},{lat:35.68,lng:139.76},
-  {lat:1.35,lng:103.82},{lat:-33.87,lng:151.21},{lat:37.57,lng:126.98},
-  {lat:55.75,lng:37.62},{lat:19.43,lng:-99.13},{lat:-23.55,lng:-46.63},
-  {lat:28.61,lng:77.20}
-];
+// Cities
+const cities = [{lat:40.71,lng:-74},{lat:51.51,lng:-0.13},{lat:35.68,lng:139.76},{lat:1.35,lng:103.82},{lat:-33.87,lng:151.21}];
 
-function shootArc(){
-  const spot = spots[Math.floor(Math.random()*spots.length)];
+// Shoot arc
+function shoot(){ 
+  const c = cities[Math.floor(Math.random()*cities.length)];
   const buy = Math.random()>0.45;
-  const arc = {
-    startLat: spot.lat,
-    startLng: spot.lng,
-    endLat: 0,
-    endLng: 0,
-    color: buy ? '#10b981' : '#ef4444',
-    stroke: buy ? 1.3 : 1
-  };
+  const arc = {startLat:c.lat, startLng:c.lng, endLat:0, endLng:0, color:buy?'#10b981':'#ef4444'};
   Globe.arcsData([...Globe.arcsData(), arc]);
-  setTimeout(()=> Globe.arcsData(Globe.arcsData().filter(a=>a!==arc)), 4000);
+  setTimeout(()=>Globe.arcsData(Globe.arcsData().filter(a=>a!==arc)),4000);
 }
 
 // Live trade + arc
 let price = 2.21;
-function newTrade(){
+function trade(){
   const buy = Math.random()>0.5;
-  const qty = (Math.random()*120+15).toFixed(1);
-  price = price * (1 + (Math.random()-0.5)*0.004);
+  const qty = (Math.random()*120+20).toFixed(1);
+  price += (Math.random()-0.5)*0.005;
   const div = document.createElement('div');
-  div.className = buy ? 'text-green-400' : 'text-red-400';
-  div.innerHTML = `${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'second:'2-digit'})} <b>${qty}</b> XRP $${price.toFixed(4)}`;
+  div.className = buy?'text-green-400':'text-red-400';
+  div.innerHTML = `${new Date().toLocaleTimeString().slice(0,8)} <b>${qty}</b> XRP $${price.toFixed(4)}`;
   document.getElementById('trades').prepend(div);
-  if(document.getElementById('trades').children.length>12) document.getElementById('trades').removeChild(document.getElementById('trades').lastChild);
-
-  shootArc();
+  if(document.getElementById('trades').children.length>15) document.getElementById('trades').lastChild.remove();
+  shoot();
 }
 
-// Price & volume
-async function refreshPrice(){
+// Price
+async function updatePrice(){
   try{
-    const r=await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ripple&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true');
-    const j=await r.json();
-    price=j.ripple.usd;
-    document.getElementById('price').textContent='$'+price.toFixed(4);
-    document.getElementById('change').textContent=(j.ripple.usd_24h_change>0?'+':'')+j.ripple.usd_24h_change.toFixed(2)+'%';
-    document.getElementById('change').className=j.ripple.usd_24h_change>0?'text-green-400':'text-red-400';
-    document.getElementById('volume').textContent='$'+(j.ripple.usd_24h_vol/1e9).toFixed(2)+'B';
+    const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ripple&vs_currencies=usd&include_24hr_change=true&include_24hr_vol=true');
+    const j = await r.json();
+    price = j.ripple.usd;
+    document.getElementById('price').textContent = '$'+price.toFixed(4);
+    document.getElementById('change').textContent = (j.ripple.usd_24h_change>0?'+':'')+j.ripple.usd_24h_change.toFixed(2)+'%';
+    document.getElementById('change').className = j.ripple.usd_24h_change>0?'text-green-400':'text-red-400';
+    document.getElementById('volume').textContent = '$'+(j.ripple.usd_24h_vol/1e9).toFixed(2)+'B';
   }catch(e){}
 }
-setInterval(refreshPrice,5000);
-refreshPrice();
+setInterval(updatePrice,5000); updatePrice();
 
-// Order book depth (mock but updating)
-function refreshDepth(){
-  document.getElementById('bidDepth').textContent=(7+Math.random()*3).toFixed(1)+'k';
-  document.getElementById('askDepth').textContent=(5+Math.random()*3).toFixed(1)+'k';
-}
-setInterval(refreshDepth,8000);
-refreshDepth();
+// Depth
+setInterval(()=>{document.getElementById('bid').textContent=(7+Math.random()*3).toFixed(1)+'k';document.getElementById('ask').textContent=(5+Math.random()*3).toFixed(1)+'k';},8000);
 
-// ETF cards
-const etfs = [
-  {name:"Canary XRPC", inflows:243, aum:231, change:"+0.5%"},
-  {name:"Bitwise XRPT", inflows:135, aum:183, change:"-0.2%"},
-  {name:"Franklin EZRP", inflows:62.6, aum:154, change:"+1.0%"},
-  {name:"Grayscale GXRP", inflows:67.4, aum:88, change:"-0.5%"},
-  {name:"21Shares AXRP", inflows:5, aum:19, change:"+0.1%"}
-];
-etfs.forEach(e=>{
-  const card=document.createElement('div');
-  card.className='bg-gray-900 rounded-2xl p-5';
-  card.innerHTML=`
-    <div class="font-bold">${e.name}</div>
-    <div class="text-2xl font-bold">$${ (243+e.inflows*0).toFixed(0) }M purchased</div>
-    <div>AUM $${e.aum}M</div>
-    <div class="${e.change.startsWith('+')?'text-green-400':'text-red-400'}">${e.change}</div>
-  `;
-  document.getElementById('etfCards').appendChild(card);
+// ETFs
+['Canary XRPC $243M','Bitwise XRPT $135M','Franklin EZRP $63M','Grayscale GXRP $67M','21Shares AXRP $5M'].forEach(t=>{
+  const d=document.createElement('div');
+  d.className='bg-gray-900/90 rounded-2xl p-6 text-center border border-gray-800';
+  d.innerHTML=`<div class="font-bold">${t.split(' ')[0]+' '+t.split(' ')[1]}</div><div class="text-3xl font-bold text-cyan-400">${t.split(' ')[2]}</div><div class="text-sm text-gray-400">purchased</div>`;
+  document.getElementById('etfs').appendChild(d);
 });
 
 // Clock
-function tick(){
-  const et = new Date().toLocaleString("en-US", {timeZone:"America/New_York"});
+function clock(){
+  const et = new Date().toLocaleString("en-US",{timeZone:"America/New_York"});
   const d = new Date(et);
-  const h=d.getHours(), wd=d.getDay();
-  const live = wd>=1 && wd<=5 && h>=9 && h<16;
-  document.getElementById('clock').textContent = d.toLocaleTimeString('en-US',{hour12:false, timeZoneName:'short'}).split(' ')[0] + ' ET';
+  const live = d.getDay()>=1&&d.getDay()<=5 && d.getHours()>=9&&d.getHours()<16;
+  document.getElementById('clock').textContent = d.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false})+' ET';
   document.getElementById('status').textContent = live?'LIVE':'CLOSED';
-  document.getElementById('status').className = live?'text-5xl font-bold text-green-400':'text-5xl font-bold text-red-400';
+  document.getElementById('status').className = live?'text-6xl font-bold text-green-400':'text-6xl font-bold text-red-400';
 }
-setInterval(tick,1000);
-tick();
+setInterval(clock,1000); clock();
 
-// Start the show
-setInterval(newTrade, 3000);
-newTrade();
+// Start
+setInterval(trade,3200); trade();
 </script>
 </body>
 </html>
