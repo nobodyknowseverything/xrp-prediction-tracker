@@ -226,30 +226,44 @@
 
   function loadTradingViewChart(interval) {
     const container = document.getElementById('chartContainer');
-    container.innerHTML = `
-      <div class="tradingview-widget-container" style="height:100%;width:100%">
-        <div class="tradingview-widget-container__widget" style="height:100%;width:100%"></div>
-        <script type="text/javascript" src="https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js" async>
-        {
-          "autosize": true,
-          "symbol": "BINANCE:XRPUSDT",
-          "interval": "${interval}",
-          "timezone": "Etc/UTC",
-          "theme": "dark",
-          "style": "1",
-          "locale": "en",
-          "backgroundColor": "#111111",
-          "gridColor": "#1e293b",
-          "withdateranges": true,
-          "hide_side_toolbar": false,
-          "allow_symbol_change": false,
-          "save_image": false,
-          "hide_volume": false,
-          "support_host": "https://www.tradingview.com"
-        }
-        </script>
-      </div>
-    `;
+    container.innerHTML = ''; // Clear any previous content
+
+    const widgetContainer = document.createElement('div');
+    widgetContainer.className = 'tradingview-widget-container';
+    widgetContainer.style.height = '100%';
+    widgetContainer.style.width = '100%';
+
+    const innerDiv = document.createElement('div');
+    innerDiv.className = 'tradingview-widget-container__widget';
+    innerDiv.style.height = '100%';
+    innerDiv.style.width = '100%';
+
+    widgetContainer.appendChild(innerDiv);
+    container.appendChild(widgetContainer);
+
+    const script = document.createElement('script');
+    script.type = 'text/javascript';
+    script.src = 'https://s3.tradingview.com/external-embedding/embed-widget-advanced-chart.js';
+    script.async = true;
+    script.innerHTML = JSON.stringify({
+      "autosize": true,
+      "symbol": "BINANCE:XRPUSDT",
+      "interval": interval,
+      "timezone": "Etc/UTC",
+      "theme": "dark",
+      "style": "1",
+      "locale": "en",
+      "backgroundColor": "#111111",
+      "gridColor": "#1e293b",
+      "withdateranges": true,
+      "hide_side_toolbar": false,
+      "allow_symbol_change": false,
+      "save_image": false,
+      "hide_volume": false,
+      "support_host": "https://www.tradingview.com"
+    });
+
+    innerDiv.appendChild(script);
   }
 
   function showOverlay(interval) {
@@ -281,8 +295,9 @@
     updateAll();
   };
 
-  updatePriceAndVolume(); setInterval(updatePriceAndVolume, 5000);
+  updatePriceAndVolume(); 
+  setInterval(updatePriceAndVolume, 5000);
   updateAll();
 </script>
 </body>
-</html>
+        </html>
