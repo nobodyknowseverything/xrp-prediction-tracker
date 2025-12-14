@@ -1,2 +1,2 @@
-# my-xrp-dashboard
-"Live XRP Order Book Site"
+# xrp-prediction-tracker
+"XRP Prediction Tracker"
