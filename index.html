@@ -90,11 +90,9 @@
   <!-- Theme + Currency -->
   <div class="fixed top-28 right-4 z-50 flex gap-3 items-center">
     <button id="themeToggle" class="toggle-btn">
-      <!-- Moon Icon (visible in dark mode) -->
       <svg class="icon-moon w-6 h-6 text-cyan-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
         <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
       </svg>
-      <!-- Sun Icon (visible in light mode) -->
       <svg class="icon-sun w-6 h-6 text-yellow-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
         <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.708.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path>
       </svg>
@@ -179,7 +177,6 @@
         <input type="number" id="myMoonPrice" value="100" min="0.1" step="0.01">
       </div>
 
-      <!-- Current Portfolio Value - Full precise value -->
       <div class="portfolio-value" id="myCurrentValue">$2,020.00</div>
 
       <div class="my-moon-progress">
@@ -243,23 +240,16 @@
 
   let lastRocketSide = {};
 
-  function formatFullCurrency(value, sym) {
+  function formatFull(value, sym) {
     return sym + value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
-  function formatMoonValue(value, sym) {
-    const absValue = Math.abs(value);
-    if (absValue >= 1000000) {
-      const suffixes = ['', 'K', 'M', 'B'];
-      let suffixIndex = 0;
-      let formatted = absValue;
-      while (formatted >= 1000 && suffixIndex < suffixes.length - 1) {
-        formatted /= 1000;
-        suffixIndex++;
-      }
-      return sym + formatted.toFixed(2) + suffixes[suffixIndex];
-    }
-    return sym + absValue.toFixed(2);
+  function formatAbbreviated(value, sym) {
+    const abs = Math.abs(value);
+    if (abs >= 1000000000) return sym + (abs / 1000000000).toFixed(2) + 'B';
+    if (abs >= 1000000) return sym + (abs / 1000000).toFixed(2) + 'M';
+    if (abs >= 1000) return sym + (abs / 1000).toFixed(2) + 'K';
+    return sym + abs.toFixed(2);
   }
 
   function triggerMoonshot() {
@@ -290,22 +280,27 @@
 
   function updateMyMoonCalculator() {
     const holdings = parseFloat(myHoldingsInput.value) || 0;
-    let moonPrice = parseFloat(myMoonPriceInput.value) || 0;
+    const moonPriceUSD = parseFloat(myMoonPriceInput.value) || 0;
     const rate = rates[currentCurrency];
     const sym = symbols[currentCurrency];
 
-    const currentValueNum = holdings * currentUSDPrice * rate;
-    myCurrentValue.textContent = formatFullCurrency(currentValueNum, sym);
+    // Current portfolio: live USD price converted to selected currency
+    const currentValue = holdings * currentUSDPrice * rate;
+    myCurrentValue.textContent = formatFull(currentValue, sym);
 
-    const moonValueNum = holdings * moonPrice * rate;
-    myMoonValue.textContent = formatMoonValue(moonValueNum, sym);
+    // Moon price: user-entered value is assumed in selected currency → no extra conversion
+    const moonPriceInCurrency = moonPriceUSD;
+    const moonValue = holdings * moonPriceInCurrency;
+
+    myMoonValue.textContent = formatAbbreviated(moonValue, sym);
+    myMoonPriceDisplay.textContent = formatFull(moonPriceInCurrency, sym);
 
     myHoldingsDisplay.textContent = holdings.toLocaleString() + ' XRP';
-    myMoonPriceDisplay.textContent = formatFullCurrency(moonPrice * rate, sym);
 
+    // Progress: current price in selected currency vs moon price (in selected currency)
     const currentPriceInCurrency = currentUSDPrice * rate;
-    if (moonPrice > 0 && currentPriceInCurrency < moonPrice * rate) {
-      const progress = (currentPriceInCurrency / (moonPrice * rate)) * 100;
+    if (moonPriceInCurrency > 0 && currentPriceInCurrency < moonPriceInCurrency) {
+      const progress = (currentPriceInCurrency / moonPriceInCurrency) * 100;
       myMoonFill.style.width = progress + '%';
       myMoonText.textContent = progress.toFixed(1) + '% to your moon!';
       
@@ -313,7 +308,7 @@
       else if (progress >= 50) myMoonMessage.textContent = 'Halfway to the moon! Keep going! 🚀';
       else if (progress >= 20) myMoonMessage.textContent = 'On your way! 💪';
       else myMoonMessage.textContent = 'Diamond hands pay off! 💎🙌';
-    } else if (currentPriceInCurrency >= moonPrice * rate) {
+    } else if (currentPriceInCurrency >= moonPriceInCurrency) {
       myMoonFill.style.width = '100%';
       myMoonText.textContent = 'YOU MADE IT TO THE MOON!! 🌕🌕🌕';
       myMoonMessage.textContent = 'CONGRATULATIONS!! 🎉🚀🌙';
@@ -377,7 +372,7 @@
       const targetUSD = targets[term];
       const overallPercent = Math.min(100, (currentUSDPrice / targetUSD) * 100);
 
-      document.getElementById(`${term}Target`).textContent = sym + formatFullCurrency(targetUSD * rate, '');
+      document.getElementById(`${term}Target`).textContent = sym + formatFull(targetUSD * rate, '');
       document.getElementById(`${term}Bar`).style.width = overallPercent + '%';
       document.getElementById(`${term}Percent`).textContent = overallPercent.toFixed(2) + '% to target';
 
