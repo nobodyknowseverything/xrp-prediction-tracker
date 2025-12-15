@@ -11,7 +11,10 @@
     body{margin:0;background:#000;font-family:system-ui,sans-serif;overflow-x:hidden;color:#fff}
     .toggle-btn{background:#1f2937;border:none;padding:10px;cursor:pointer;border-radius:50%;width:48px;height:48px;display:flex;align-items:center;justify-content:center;transition:all .3s;position:relative}
     .toggle-btn:hover{background:#374151}
-    .toggle-btn svg{position:absolute;width:24px;height:24px;transition:opacity .3s ease;pointer-events:none}
+    .icon-moon {display: block;}
+    .icon-sun {display: none;}
+    html:not(.dark) .icon-moon {display: none;}
+    html:not(.dark) .icon-sun {display: block;}
     select{font-size:14px;padding:8px 12px;border-radius:8px;background:#1f2937;color:#fff;border:1px solid #374151}
     .live-badge{background:linear-gradient(90deg,#059669,#10b981);color:white;padding:4px 10px;border-radius:8px;font-size:12px;font-weight:bold}
     .grok-logo{filter:drop-shadow(0 0 4px #9500ff);animation:glow 2s ease-in-out infinite alternate}
@@ -49,7 +52,7 @@
     .input-group{margin:0.8rem 0;display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap}
     .input-label{font-size:1rem;color:#ccc;min-width:120px;text-align:right}
     input[type="number"]{background:#1e293b;color:white;border:1px solid #334155;border-radius:8px;padding:8px 12px;width:180px;font-size:1rem;text-align:center}
-    .portfolio-value{font-size:2.8rem;font-weight:bold;color:#00ffff;text-shadow:0 0 15px #00ffff;margin:1.2rem 0;transition:all .5s}
+    .portfolio-value{font-size:2.4rem;font-weight:bold;color:#00ffff;text-shadow:0 0 15px #00ffff;margin:1.2rem 0;transition:all .5s}
     .my-moon-progress{margin:1rem 0}
     .my-moon-bar{height:24px;background:#1e293b;border-radius:12px;overflow:hidden;position:relative}
     .my-moon-fill{height:100%;background:linear-gradient(90deg,#ff0066,#00ffff);transition:width 1s ease}
@@ -57,7 +60,11 @@
     .moon-message{font-size:1.3rem;margin-top:0.8rem;font-weight:bold;color:#00ffff}
     .moon-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:1rem}
     .moon-stat{font-size:1rem;color:#ccc}
-    .moon-stat-value{font-size:1.4rem;font-weight:bold;color:#00ffff;margin-top:0.3rem}
+    .moon-stat-value{font-size:1.3rem;font-weight:bold;color:#00ffff;margin-top:0.3rem}
+    @media (max-width: 768px) {
+      .portfolio-value{font-size:2rem;}
+      .moon-stat-value{font-size:1.1rem;}
+    }
   </style>
 </head>
 <body class="transition-colors duration-500">
@@ -83,11 +90,13 @@
   <!-- Theme + Currency -->
   <div class="fixed top-28 right-4 z-50 flex gap-3 items-center">
     <button id="themeToggle" class="toggle-btn">
-      <svg id="moonIcon" class="w-6 h-6 text-cyan-400" fill="currentColor" viewBox="0 0 20 20" style="opacity:1">
-        <path d="M17.293 13.293A8 8 0 6 16.707 2.707a8.001 8.001 0 1010.586 10.586z"/>
+      <!-- Moon Icon (visible in dark mode) -->
+      <svg class="icon-moon w-6 h-6 text-cyan-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"></path>
       </svg>
-      <svg id="sunIcon" class="w-6 h-6 text-yellow-400" fill="currentColor" viewBox="0 0 20 20" style="opacity:0">
-        <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.708.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"/>
+      <!-- Sun Icon (visible in light mode) -->
+      <svg class="icon-sun w-6 h-6 text-yellow-400" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+        <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.708.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"></path>
       </svg>
     </button>
     <select id="currencySelect">
@@ -170,6 +179,7 @@
         <input type="number" id="myMoonPrice" value="100" min="0.1" step="0.01">
       </div>
 
+      <!-- Current Portfolio Value - Full precise value -->
       <div class="portfolio-value" id="myCurrentValue">$2,020.00</div>
 
       <div class="my-moon-progress">
@@ -233,8 +243,23 @@
 
   let lastRocketSide = {};
 
-  function formatCurrency(value, sym) {
+  function formatFullCurrency(value, sym) {
     return sym + value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+
+  function formatMoonValue(value, sym) {
+    const absValue = Math.abs(value);
+    if (absValue >= 1000000) {
+      const suffixes = ['', 'K', 'M', 'B'];
+      let suffixIndex = 0;
+      let formatted = absValue;
+      while (formatted >= 1000 && suffixIndex < suffixes.length - 1) {
+        formatted /= 1000;
+        suffixIndex++;
+      }
+      return sym + formatted.toFixed(2) + suffixes[suffixIndex];
+    }
+    return sym + absValue.toFixed(2);
   }
 
   function triggerMoonshot() {
@@ -269,18 +294,18 @@
     const rate = rates[currentCurrency];
     const sym = symbols[currentCurrency];
 
-    const currentValue = holdings * currentUSDPrice * rate;
-    myCurrentValue.textContent = formatCurrency(currentValue, sym);
+    const currentValueNum = holdings * currentUSDPrice * rate;
+    myCurrentValue.textContent = formatFullCurrency(currentValueNum, sym);
 
-    const moonValue = holdings * moonPrice;
-    myMoonValue.textContent = formatCurrency(moonValue, sym);
+    const moonValueNum = holdings * moonPrice * rate;
+    myMoonValue.textContent = formatMoonValue(moonValueNum, sym);
 
     myHoldingsDisplay.textContent = holdings.toLocaleString() + ' XRP';
-    myMoonPriceDisplay.textContent = formatCurrency(moonPrice, sym);
+    myMoonPriceDisplay.textContent = formatFullCurrency(moonPrice * rate, sym);
 
     const currentPriceInCurrency = currentUSDPrice * rate;
-    if (moonPrice > 0 && currentPriceInCurrency < moonPrice) {
-      const progress = (currentPriceInCurrency / moonPrice) * 100;
+    if (moonPrice > 0 && currentPriceInCurrency < moonPrice * rate) {
+      const progress = (currentPriceInCurrency / (moonPrice * rate)) * 100;
       myMoonFill.style.width = progress + '%';
       myMoonText.textContent = progress.toFixed(1) + '% to your moon!';
       
@@ -288,7 +313,7 @@
       else if (progress >= 50) myMoonMessage.textContent = 'Halfway to the moon! Keep going! 🚀';
       else if (progress >= 20) myMoonMessage.textContent = 'On your way! 💪';
       else myMoonMessage.textContent = 'Diamond hands pay off! 💎🙌';
-    } else if (currentPriceInCurrency >= moonPrice) {
+    } else if (currentPriceInCurrency >= moonPrice * rate) {
       myMoonFill.style.width = '100%';
       myMoonText.textContent = 'YOU MADE IT TO THE MOON!! 🌕🌕🌕';
       myMoonMessage.textContent = 'CONGRATULATIONS!! 🎉🚀🌙';
@@ -352,7 +377,7 @@
       const targetUSD = targets[term];
       const overallPercent = Math.min(100, (currentUSDPrice / targetUSD) * 100);
 
-      document.getElementById(`${term}Target`).textContent = sym + (targetUSD * rate).toFixed(0) + '+';
+      document.getElementById(`${term}Target`).textContent = sym + formatFullCurrency(targetUSD * rate, '');
       document.getElementById(`${term}Bar`).style.width = overallPercent + '%';
       document.getElementById(`${term}Percent`).textContent = overallPercent.toFixed(2) + '% to target';
 
@@ -470,14 +495,7 @@
     document.documentElement.classList.toggle('dark');
     const isDark = document.documentElement.classList.contains('dark');
     document.body.style.background = isDark ? '#000' : '#f3f4f6';
-
-    document.getElementById('moonIcon').style.opacity = isDark ? '1' : '0';
-    document.getElementById('sunIcon').style.opacity = isDark ? '0' : '1';
   };
-
-  // Initial moon visible
-  document.getElementById('moonIcon').style.opacity = '1';
-  document.getElementById('sunIcon').style.opacity = '0';
 
   document.getElementById('currencySelect').value = currentCurrency;
   document.getElementById('currencySelect').onchange = e => {
