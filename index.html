@@ -37,6 +37,7 @@
     .progress-fill{height:100%;background:linear-gradient(90deg,#00ffff,#10b981);transition:width 1.5s ease}
     .progress-text{position:absolute;top:0;left:0;width:100%;text-align:center;line-height:28px;font-weight:bold;color:#000;text-shadow:0 0 5px #fff;font-size:1.1rem}
     .daily-progress{font-size:0.95rem;margin-top:0.5rem;font-weight:bold}
+    .days-to-target{font-size:0.95rem;margin-top:0.3rem;color:#a0aec0}
     .rocket{position:absolute;bottom:-80px;font-size:4.5rem;opacity:0;transition:opacity .3s, bottom 2.2s ease-in, left 2.2s ease-in;pointer-events:none;z-index:20}
     .rocket.active{opacity:1;bottom:120%}
     .rocket.moonshot{font-size:8rem !important;animation:shake 0.5s infinite}
@@ -49,9 +50,9 @@
     .close-btn{position:absolute;top:20px;right:20px;background:#1e293b;color:#fff;width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2.5rem;cursor:pointer;z-index:10}
     .moon-calculator{background:linear-gradient(135deg,#1e293b,#0f172a);border-radius:1rem;padding:1.5rem;border:1px solid #334155;box-shadow:0 10px 25px rgba(0,255,255,0.1);text-align:center}
     .moon-calculator h3{font-size:1.6rem;font-weight:bold;color:#00ffff;text-shadow:0 0 10px #00ffff;margin-bottom:1rem}
-    .input-group{margin:0.8rem 0;display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap}
-    .input-label{font-size:1rem;color:#ccc;min-width:120px;text-align:right}
-    input[type="number"]{background:#1e293b;color:white;border:1px solid #334155;border-radius:8px;padding:8px 12px;width:180px;font-size:1rem;text-align:center}
+    .input-group{margin:1rem 0;display:flex;align-items:center;justify-content:center;gap:12px;flex-wrap:wrap}
+    .input-label{font-size:1rem;color:#ccc;width:140px;text-align:right;flex-shrink:0}
+    input[type="number"]{background:#1e293b;color:white;border:1px solid #334155;border-radius:8px;padding:8px 12px;width:200px;font-size:1rem;text-align:center}
     .portfolio-value{font-size:2.4rem;font-weight:bold;color:#00ffff;text-shadow:0 0 15px #00ffff;margin:1.2rem 0;transition:all .5s}
     .my-moon-progress{margin:1rem 0}
     .my-moon-bar{height:24px;background:#1e293b;border-radius:12px;overflow:hidden;position:relative}
@@ -64,6 +65,8 @@
     @media (max-width: 768px) {
       .portfolio-value{font-size:2rem;}
       .moon-stat-value{font-size:1.1rem;}
+      .input-label{width:100%;text-align:center;}
+      input[type="number"]{width:100%;max-width:300px;}
     }
   </style>
 </head>
@@ -73,7 +76,7 @@
   <div class="fixed top-0 left-0 right-0 z-50 bg-black/95 border-b border-cyan-800 py-2 text-center shadow-2xl backdrop-blur-sm">
     <div class="flex flex-col md:flex-row items-center justify-center gap-3 text-xs px-4">
       <div class="text-cyan-300 live-badge font-bold">
-        XRP Ultimate Bullish Tracker • Click Card for Pro Chart
+        XRP Ultimate Prediction Tracker • Click Card for Pro Chart
       </div>
       <div class="hidden md:flex items-center gap-3 bg-gradient-to-r from-purple-600/20 to-blue-600/20 px-5 py-1.5 rounded-full border border-purple-500/50 shadow-xl">
         <img src="data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMTAiIGZpbGw9IiMwMDAwMDAiLz4KPGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iNCIgZmlsbD0iI0ZGRkZGRiIvPgo8Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSI4IiBzdHJva2U9IiM5NTAwRkYiIHN0cm9rZS13aWR0aD0iMSIgc3Ryb2tlLWRhc2hhcnJheT0iNSwgNSIvPgo8L3N2Zz4K" alt="Grok" class="w-5 h-5 grok-logo">
@@ -114,7 +117,7 @@
 
     <!-- Short Term Card -->
     <div class="pred-card" id="shortCard">
-      <div class="pred-header bg-gradient-to-r from-orange-900 to-red-900">Short Term (Q1-Q2 2026)</div>
+      <div class="pred-header bg-gradient-to-r from-orange-900 to-red-900">Short Term (2025-2026)</div>
       <div class="pred-body">
         <div class="rocket left">🚀</div>
         <div class="pred-current">
@@ -124,8 +127,9 @@
         <div class="pred-target" id="shortTarget">$15+</div>
         <div class="progress-bar"><div class="progress-fill" id="shortBar" style="width:13.5%"><div class="progress-text" id="shortPercent">13.5% to target</div></div></div>
         <div class="daily-progress" id="shortDaily">Daily: +0.00%</div>
-        <div class="pred-sentiment bullish" id="shortSentiment">Bullish • ETF Supply Shock</div>
-        <p class="text-xs text-gray-400 mt-4 text-center px-4">Progress toward $15+ driven by ETF inflows & OTC depletion.</p>
+        <div class="days-to-target" id="shortDays">Est. days to target: Calculating...</div>
+        <div class="pred-sentiment bullish" id="shortSentiment">Bullish</div>
+        <p class="text-xs text-gray-400 mt-4 text-center px-4">Driven by ETF inflows • OTC & Exchanges Supply Shock.</p>
       </div>
     </div>
 
@@ -141,14 +145,15 @@
         <div class="pred-target" id="medTarget">$100+</div>
         <div class="progress-bar"><div class="progress-fill" id="medBar" style="width:2%"><div class="progress-text" id="medPercent">2% to target</div></div></div>
         <div class="daily-progress" id="medDaily">Daily: +0.00%</div>
+        <div class="days-to-target" id="medDays">Est. days to target: Calculating...</div>
         <div class="pred-sentiment extreme-bullish" id="medSentiment">Extreme Bullish</div>
-        <p class="text-xs text-gray-400 mt-4 text-center px-4">Institutional surge & XRPL/DeFi growth (100x scenarios).</p>
+        <p class="text-xs text-gray-400 mt-4 text-center px-4">Global Institutional & Banking mass adoption • XRPL/DeFi growth (Mkt Cap Multiplier).</p>
       </div>
     </div>
 
     <!-- Long Term Card -->
     <div class="pred-card" id="longCard">
-      <div class="pred-header bg-gradient-to-r from-emerald-900 to-green-900">Long Term (2030+)</div>
+      <div class="pred-header bg-gradient-to-r from-emerald-900 to-green-900">Long Term (2028-2030)</div>
       <div class="pred-body">
         <div class="rocket left">🚀</div>
         <div class="pred-current">
@@ -158,8 +163,9 @@
         <div class="pred-target" id="longTarget">$5,000+</div>
         <div class="progress-bar"><div class="progress-fill" id="longBar" style="width:0.04%"><div class="progress-text" id="longPercent">0.04% to target</div></div></div>
         <div class="daily-progress" id="longDaily">Daily: +0.00%</div>
-        <div class="pred-sentiment extreme-bullish" id="longSentiment">Hyper Bullish (Speculative)</div>
-        <p class="text-xs text-gray-400 mt-4 text-center px-4">Global bridge asset dominance (multi-thousand models).</p>
+        <div class="days-to-target" id="longDays">Est. days to target: Calculating...</div>
+        <div class="pred-sentiment extreme-bullish" id="longSentiment">Hyper Bullish</div>
+        <p class="text-xs text-gray-400 mt-4 text-center px-4">Digital Asset Tokenization • World Digital Currency • Global Bridging Dominance.</p>
       </div>
     </div>
 
@@ -240,6 +246,9 @@
 
   let lastRocketSide = {};
 
+  // Average daily % change over last 30 days (will be updated from real data if possible)
+  let avgDailyChange = 0.5; // fallback placeholder in %
+
   function formatFull(value, sym) {
     return sym + value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
@@ -250,6 +259,14 @@
     if (abs >= 1000000) return sym + (abs / 1000000).toFixed(2) + 'M';
     if (abs >= 1000) return sym + (abs / 1000).toFixed(2) + 'K';
     return sym + abs.toFixed(2);
+  }
+
+  function calculateDaysToTarget(current, target, avgDailyPct) {
+    if (avgDailyPct <= 0 || current >= target) return 'Already reached or no growth';
+    const dailyMultiplier = 1 + (avgDailyPct / 100);
+    const days = Math.log(target / current) / Math.log(dailyMultiplier);
+    if (isNaN(days) || days < 0) return 'N/A';
+    return Math.ceil(days) + ' days';
   }
 
   function triggerMoonshot() {
@@ -284,11 +301,9 @@
     const rate = rates[currentCurrency];
     const sym = symbols[currentCurrency];
 
-    // Current portfolio: live USD price converted to selected currency
     const currentValue = holdings * currentUSDPrice * rate;
     myCurrentValue.textContent = formatFull(currentValue, sym);
 
-    // Moon price: user-entered value is assumed in selected currency → no extra conversion
     const moonPriceInCurrency = moonPriceUSD;
     const moonValue = holdings * moonPriceInCurrency;
 
@@ -297,7 +312,6 @@
 
     myHoldingsDisplay.textContent = holdings.toLocaleString() + ' XRP';
 
-    // Progress: current price in selected currency vs moon price (in selected currency)
     const currentPriceInCurrency = currentUSDPrice * rate;
     if (moonPriceInCurrency > 0 && currentPriceInCurrency < moonPriceInCurrency) {
       const progress = (currentPriceInCurrency / moonPriceInCurrency) * 100;
@@ -338,6 +352,44 @@
       const changeEl = document.getElementById(`${term}Change`);
       changeEl.textContent = (shortTermChangePct > 0 ? '+' : '') + shortTermChangePct.toFixed(2) + '%';
       changeEl.className = 'pred-current-change ' + (shortTermChangePct > 0 ? 'text-green-400 bg-green-900/40' : 'text-red-400 bg-red-900/40');
+
+      const targetUSD = targets[term];
+      const overallPercent = Math.min(100, (currentUSDPrice / targetUSD) * 100);
+
+      const formattedTarget = targetUSD.toLocaleString() + '+';
+      document.getElementById(`${term}Target`).textContent = '$' + formattedTarget;
+
+      document.getElementById(`${term}Bar`).style.width = overallPercent + '%';
+      document.getElementById(`${term}Percent`).textContent = overallPercent.toFixed(2) + '% to target';
+
+      // Days to target estimate
+      const daysEl = document.getElementById(`${term}Days`);
+      if (avgDailyChange > 0 && currentUSDPrice < targetUSD) {
+        daysEl.textContent = 'Est. days to target: ' + calculateDaysToTarget(currentUSDPrice, targetUSD, avgDailyChange);
+      } else if (currentUSDPrice >= targetUSD) {
+        daysEl.textContent = 'Target reached!';
+      } else {
+        daysEl.textContent = 'Est. days to target: N/A (no growth)';
+      }
+
+      const dailyProgressPct = dayStartPrice ? ((currentUSDPrice - dayStartPrice) / (targetUSD - dayStartPrice)) * 100 : 0;
+
+      const dailyEl = document.getElementById(`${term}Daily`);
+      dailyEl.textContent = 'Daily: ' + (dailyProgressPct > 0 ? '+' : '') + dailyProgressPct.toFixed(2) + '%';
+      dailyEl.className = 'daily-progress ' + (dailyProgressPct > 0 ? 'text-green-400' : 'text-red-400');
+
+      const sentiment = document.getElementById(`${term}Sentiment`);
+      sentiment.originalText = sentiment.originalText || sentiment.textContent;
+      if (dailyProgressPct >= 5) {
+        sentiment.textContent = 'MOONSHOT IN PROGRESS!! 🌕🚀🌕';
+        sentiment.classList.add('moonshot-mode');
+      } else if (dailyProgressPct >= 3) {
+        sentiment.textContent = 'PUMP DETECTED! 🚀';
+        sentiment.classList.add('pump-detected');
+      } else {
+        sentiment.textContent = sentiment.originalText;
+        sentiment.classList.remove('pump-detected', 'moonshot-mode');
+      }
     });
 
     if (shortTermChangePct > 0.05) {
@@ -358,49 +410,6 @@
       dayStartPrice = currentUSDPrice;
       lastDay = todayUTC;
       window.moonshotTriggeredToday = false;
-
-      ['short', 'med', 'long'].forEach(term => {
-        const sentiment = document.getElementById(`${term}Sentiment`);
-        sentiment.textContent = sentiment.originalText || sentiment.textContent;
-        sentiment.classList.remove('pump-detected', 'moonshot-mode');
-      });
-    }
-
-    let maxDailyProgress = 0;
-
-    ['short', 'med', 'long'].forEach(term => {
-      const targetUSD = targets[term];
-      const overallPercent = Math.min(100, (currentUSDPrice / targetUSD) * 100);
-
-      document.getElementById(`${term}Target`).textContent = sym + formatFull(targetUSD * rate, '');
-      document.getElementById(`${term}Bar`).style.width = overallPercent + '%';
-      document.getElementById(`${term}Percent`).textContent = overallPercent.toFixed(2) + '% to target';
-
-      const dailyProgressPct = dayStartPrice ? ((currentUSDPrice - dayStartPrice) / (targetUSD - dayStartPrice)) * 100 : 0;
-
-      const dailyEl = document.getElementById(`${term}Daily`);
-      dailyEl.textContent = 'Daily: ' + (dailyProgressPct > 0 ? '+' : '') + dailyProgressPct.toFixed(2) + '%';
-      dailyEl.className = 'daily-progress ' + (dailyProgressPct > 0 ? 'text-green-400' : 'text-red-400');
-
-      if (dailyProgressPct > maxDailyProgress) maxDailyProgress = dailyProgressPct;
-
-      const sentiment = document.getElementById(`${term}Sentiment`);
-      sentiment.originalText = sentiment.originalText || sentiment.textContent;
-      if (dailyProgressPct >= 5) {
-        sentiment.textContent = 'MOONSHOT IN PROGRESS!! 🌕🚀🌕';
-        sentiment.classList.add('moonshot-mode');
-      } else if (dailyProgressPct >= 3) {
-        sentiment.textContent = 'PUMP DETECTED! 🚀';
-        sentiment.classList.add('pump-detected');
-      } else {
-        sentiment.textContent = sentiment.originalText;
-        sentiment.classList.remove('pump-detected', 'moonshot-mode');
-      }
-    });
-
-    if (maxDailyProgress >= 5 && !window.moonshotTriggeredToday) {
-      triggerMoonshot();
-      window.moonshotTriggeredToday = true;
     }
 
     previousPrice = currentUSDPrice;
@@ -414,21 +423,18 @@
       if(r.ok){
         const d = await r.json();
         currentUSDPrice = parseFloat(d.lastPrice);
-        currentVolumeUSD = parseFloat(d.quoteVolume);
       }
     } catch(e) {
       try {
         const r = await fetch('https://api.coingecko.com/api/v3/coins/ripple');
         const d = await r.json();
         currentUSDPrice = d.market_data.current_price.usd;
-        currentVolumeUSD = d.market_data.total_volume.usd;
-        currentMarketCap = d.market_data.market_cap.usd;
-        currentRank = d.market_cap_rank;
       } catch(ee) {}
     }
     updateAll();
   }
 
+  // Rest of chart functions unchanged...
   function loadTradingViewChart(interval) {
     const container = document.getElementById('chartContainer');
     container.innerHTML = '';
@@ -485,7 +491,6 @@
   document.getElementById('medCard').onclick = () => showOverlay('D');
   document.getElementById('longCard').onclick = () => showOverlay('W');
 
-  // Theme Toggle
   document.getElementById('themeToggle').onclick = () => {
     document.documentElement.classList.toggle('dark');
     const isDark = document.documentElement.classList.contains('dark');
