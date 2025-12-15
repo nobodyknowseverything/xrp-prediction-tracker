@@ -9,8 +9,9 @@
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
   <style>
     body{margin:0;background:#000;font-family:system-ui,sans-serif;overflow-x:hidden;color:#fff}
-    .toggle-btn{background:#1f2937;border:none;padding:10px;cursor:pointer;border-radius:50%;width:48px;height:48px;display:flex;align-items:center;justify-content:center;transition:all .3s}
+    .toggle-btn{background:#1f2937;border:none;padding:10px;cursor:pointer;border-radius:50%;width:48px;height:48px;display:flex;align-items:center;justify-content:center;transition:all .3s;position:relative}
     .toggle-btn:hover{background:#374151}
+    .toggle-btn svg{position:absolute;width:24px;height:24px;transition:opacity .3s ease;pointer-events:none}
     select{font-size:14px;padding:8px 12px;border-radius:8px;background:#1f2937;color:white;border:1px solid #374151}
     .live-badge{background:linear-gradient(90deg,#059669,#10b981);color:white;padding:4px 10px;border-radius:8px;font-size:12px;font-weight:bold}
     .grok-logo{filter:drop-shadow(0 0 4px #9500ff);animation:glow 2s ease-in-out infinite alternate}
@@ -43,6 +44,21 @@
     .overlay.active{opacity:1;visibility:visible}
     .overlay-chart{max-width:95%;max-height:95%;width:1400px;height:700px;background:#111;border:3px solid #00ffff;border-radius:1rem;overflow:hidden;box-shadow:0 0 40px #00ffff80;position:relative}
     .close-btn{position:absolute;top:20px;right:20px;background:#1e293b;color:#fff;width:50px;height:50px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:2.5rem;cursor:pointer;z-index:10}
+    /* Moon Calculator - Full width of 3 cards, compact height */
+    .moon-calculator{background:linear-gradient(135deg,#1e293b,#0f172a);border-radius:1rem;padding:1.5rem;border:1px solid #334155;box-shadow:0 10px 25px rgba(0,255,255,0.1);text-align:center}
+    .moon-calculator h3{font-size:1.6rem;font-weight:bold;color:#00ffff;text-shadow:0 0 10px #00ffff;margin-bottom:1rem}
+    .input-group{margin:0.8rem 0;display:flex;gap:12px;align-items:center;justify-content:center;flex-wrap:wrap}
+    .input-label{font-size:1rem;color:#ccc;min-width:120px;text-align:right}
+    input[type="number"]{background:#1e293b;color:white;border:1px solid #334155;border-radius:8px;padding:8px 12px;width:180px;font-size:1rem;text-align:center}
+    .portfolio-value{font-size:2.8rem;font-weight:bold;color:#00ffff;text-shadow:0 0 15px #00ffff;margin:1.2rem 0;transition:all .5s}
+    .my-moon-progress{margin:1rem 0}
+    .my-moon-bar{height:24px;background:#1e293b;border-radius:12px;overflow:hidden;position:relative}
+    .my-moon-fill{height:100%;background:linear-gradient(90deg,#ff0066,#00ffff);transition:width 1s ease}
+    .my-moon-text{position:absolute;top:0;left:0;width:100%;text-align:center;line-height:24px;font-weight:bold;color:#fff;font-size:1rem;text-shadow:0 0 5px #000}
+    .moon-message{font-size:1.3rem;margin-top:0.8rem;font-weight:bold;color:#00ffff}
+    .moon-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-top:1rem}
+    .moon-stat{font-size:1rem;color:#ccc}
+    .moon-stat-value{font-size:1.4rem;font-weight:bold;color:#00ffff;margin-top:0.3rem}
   </style>
 </head>
 <body class="transition-colors duration-500">
@@ -65,15 +81,15 @@
     <h2 class="text-xl md:text-2xl font-bold text-cyan-400">XRP • Ultimate Bullish Prediction Tracker (December 15, 2025)</h2>
   </div>
 
-  <!-- Theme + Currency - Fixed icons -->
+  <!-- Theme + Currency - Moon Icon Fixed -->
   <div class="fixed top-28 right-4 z-50 flex gap-3 items-center">
     <button id="themeToggle" class="toggle-btn">
-      <!-- Moon for dark mode -->
-      <svg id="moonIcon" class="w-6 h-6 text-cyan-400" fill="currentColor" viewBox="0 0 20 20">
-        <path d="M17.293 13.293A8 8 0 016.707 2.707a8.001 8.001 0 1010.586 10.586z"/>
+      <!-- Moon Icon (Dark Mode) -->
+      <svg id="moonIcon" class="w-6 h-6 text-cyan-400" fill="currentColor" viewBox="0 0 20 20" style="opacity: 1;">
+        <path d="M17.293 13.293A8 8 0 6 16.707 2.707a8.001 8.001 0 1010.586 10.586z"/>
       </svg>
-      <!-- Sun for light mode -->
-      <svg id="sunIcon" class="w-6 h-6 text-yellow-400 hidden" fill="currentColor" viewBox="0 0 20 20">
+      <!-- Sun Icon (Light Mode) -->
+      <svg id="sunIcon" class="w-6 h-6 text-yellow-400" fill="currentColor" viewBox="0 0 20 20" style="opacity: 0;">
         <path fill-rule="evenodd" d="M10 2a1 1 0 011 1v1a1 1 0 11-2 0V3a1 1 0 011-1zm4 8a4 4 0 11-8 0 4 4 0 018 0zm-.464 4.95l.707.707a1 1 0 001.414-1.414l-.707-.707a1 1 0 00-1.414 1.414zm2.12-10.607a1 1 0 010 1.414l-.706.707a1 1 0 11-1.414-1.414l.707-.707a1 1 0 011.414 0zM17 11a1 1 0 100-2h-1a1 1 0 100 2h1zm-7 4a1 1 0 011 1v1a1 1 0 11-2 0v1a1 1 0 011-1zM5.05 6.464A1 1 0 106.465 5.05l-.708-.707a1 1 0 00-1.414 1.414l.707.707zm1.414 8.486l-.708.707a1 1 0 01-1.414-1.414l.707-.707a1 1 0 011.414 1.414zM4 11a1 1 0 100-2H3a1 1 0 000 2h1z" clip-rule="evenodd"/>
       </svg>
     </button>
@@ -143,10 +159,53 @@
       </div>
     </div>
 
+    <!-- My Moon Calculator - Full width of 3 cards -->
+    <div class="md:col-span-3 moon-calculator mt-8">
+      <h3>🌕 My XRP Moon Calculator 🌕</h3>
+      
+      <div class="input-group">
+        <span class="input-label">My Holdings:</span>
+        <input type="number" id="myHoldings" value="1000" min="0" step="1">
+        <span>XRP</span>
+      </div>
+      <div class="input-group">
+        <span class="input-label">My Moon Price:</span>
+        <input type="number" id="myMoonPrice" value="100" min="0.1" step="0.01">
+      </div>
+
+      <!-- Current Portfolio Value -->
+      <div class="portfolio-value" id="myCurrentValue">$2,020.00</div>
+
+      <!-- Personal Moon Progress Bar -->
+      <div class="my-moon-progress">
+        <div class="my-moon-bar">
+          <div class="my-moon-fill" id="myMoonFill" style="width:2%"></div>
+          <div class="my-moon-text" id="myMoonText">2% to your moon!</div>
+        </div>
+      </div>
+      <div class="moon-message" id="myMoonMessage">Keep holding strong! 💎🙌</div>
+
+      <!-- Holdings, Moon Price, Moon Value Stats -->
+      <div class="moon-stats">
+        <div class="moon-stat">
+          <div>My Holdings</div>
+          <div class="moon-stat-value" id="myHoldingsDisplay">1,000 XRP</div>
+        </div>
+        <div class="moon-stat">
+          <div>My Moon Price</div>
+          <div class="moon-stat-value" id="myMoonPriceDisplay">$100.00</div>
+        </div>
+        <div class="moon-stat">
+          <div>My Moon Value</div>
+          <div class="moon-stat-value" id="myMoonValue">$100,000.00</div>
+        </div>
+      </div>
+    </div>
+
     <!-- Bottom Motivation -->
     <div class="md:col-span-3 bg-gradient-to-r from-green-900/30 to-emerald-900/30 border border-green-700 rounded-2xl p-6 text-center mt-8">
       <div class="text-4xl font-bold text-green-400 animate-pulse">XRP 24/7</div>
-      <div class="text-lg text-green-300 mt-2">CRYPTO NEVER SLEEPS • XRP MOON PREDICTION</div>
+      <div class="text-lg text-green-300 mt-2">CRYPTO NEVER SLEEPS • TO THE MOON MOMENTUM</div>
     </div>
   </div>
 
@@ -160,8 +219,8 @@
 
 <script>
   // Sounds
-  const rocketSound = new Audio('https://cdn.pixabay.com/download/audio/2022-08-09/audio_1f77e98d3b.mp3?filename=rocket-67669.mp3');
-  const cheeringSound = new Audio('https://cdn.pixabay.com/download/audio/2022-03-15/audio_6b1d4e8d8e.mp3?filename=stadium-cheer-62026.mp3');
+  const rocketSound = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-rocket-launch-1668.mp3');
+  const cheeringSound = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-stadium-crowd-cheering-1688.mp3');
 
   let currentUSDPrice = 2.02;
   let currentVolumeUSD = 1240000000;
@@ -181,11 +240,9 @@
 
   let lastRocketSide = {};
 
-  function bigNumber(n){
-    if(n >= 1e12) return (n/1e12).toFixed(2)+'T';
-    if(n >= 1e9) return (n/1e9).toFixed(2)+'B';
-    if(n >= 1e6) return (n/1e6).toFixed(1)+'M';
-    return n.toLocaleString();
+  // Format with commas and 2 decimals
+  function formatCurrency(value, sym) {
+    return sym + value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   }
 
   function triggerMoonshot() {
@@ -203,6 +260,60 @@
     rocketSound.currentTime = 0; rocketSound.play();
     setTimeout(() => { cheeringSound.currentTime = 0; cheeringSound.play(); }, 1200);
   }
+
+  // My Moon Calculator
+  const myHoldingsInput = document.getElementById('myHoldings');
+  const myMoonPriceInput = document.getElementById('myMoonPrice');
+  const myCurrentValue = document.getElementById('myCurrentValue');
+  const myMoonFill = document.getElementById('myMoonFill');
+  const myMoonText = document.getElementById('myMoonText');
+  const myMoonMessage = document.getElementById('myMoonMessage');
+  const myHoldingsDisplay = document.getElementById('myHoldingsDisplay');
+  const myMoonPriceDisplay = document.getElementById('myMoonPriceDisplay');
+  const myMoonValue = document.getElementById('myMoonValue');
+
+  function updateMyMoonCalculator() {
+    const holdings = parseFloat(myHoldingsInput.value) || 0;
+    let moonPrice = parseFloat(myMoonPriceInput.value) || 0;
+    const rate = rates[currentCurrency];
+    const sym = symbols[currentCurrency];
+
+    const currentValue = holdings * currentUSDPrice * rate;
+    myCurrentValue.textContent = formatCurrency(currentValue, sym);
+
+    const moonValue = holdings * moonPrice;
+    myMoonValue.textContent = formatCurrency(moonValue, sym);
+
+    myHoldingsDisplay.textContent = holdings.toLocaleString() + ' XRP';
+    myMoonPriceDisplay.textContent = formatCurrency(moonPrice, sym);
+
+    const currentPriceInCurrency = currentUSDPrice * rate;
+    if (moonPrice > 0 && currentPriceInCurrency < moonPrice) {
+      const progress = (currentPriceInCurrency / moonPrice) * 100;
+      myMoonFill.style.width = progress + '%';
+      myMoonText.textContent = progress.toFixed(1) + '% to your moon!';
+      
+      if (progress >= 90) myMoonMessage.textContent = 'SO CLOSE!! 🌕 ALMOST THERE 🌕';
+      else if (progress >= 50) myMoonMessage.textContent = 'Halfway to the moon! Keep going! 🚀';
+      else if (progress >= 20) myMoonMessage.textContent = 'On your way! 💪';
+      else myMoonMessage.textContent = 'Diamond hands pay off! 💎🙌';
+    } else if (currentPriceInCurrency >= moonPrice) {
+      myMoonFill.style.width = '100%';
+      myMoonText.textContent = 'YOU MADE IT TO THE MOON!! 🌕🌕🌕';
+      myMoonMessage.textContent = 'CONGRATULATIONS!! 🎉🚀🌙';
+      if (!window.moonAchievedConfetti) {
+        confetti({particleCount: 500, spread: 100});
+        window.moonAchievedConfetti = true;
+      }
+    } else {
+      myMoonFill.style.width = '0%';
+      myMoonText.textContent = 'Set your moon target!';
+      myMoonMessage.textContent = 'Dream big! 🌟';
+    }
+  }
+
+  myHoldingsInput.addEventListener('input', updateMyMoonCalculator);
+  myMoonPriceInput.addEventListener('input', updateMyMoonCalculator);
 
   function updateAll() {
     const rate = rates[currentCurrency];
@@ -281,6 +392,8 @@
     }
 
     previousPrice = currentUSDPrice;
+
+    updateMyMoonCalculator();
   }
 
   async function updatePriceAndVolume() {
@@ -304,6 +417,7 @@
     updateAll();
   }
 
+  // Chart and events...
   function loadTradingViewChart(interval) {
     const container = document.getElementById('chartContainer');
     container.innerHTML = '';
@@ -360,16 +474,23 @@
   document.getElementById('medCard').onclick = () => showOverlay('D');
   document.getElementById('longCard').onclick = () => showOverlay('W');
 
-  // Fixed theme toggle with proper icon switching
-  document.getElementById('themeToggle').onclick = () => {
+  // Theme Toggle - Fixed
+  const themeToggle = document.getElementById('themeToggle');
+  const moonIcon = document.getElementById('moonIcon');
+  const sunIcon = document.getElementById('sunIcon');
+
+  themeToggle.onclick = () => {
     document.documentElement.classList.toggle('dark');
     const isDark = document.documentElement.classList.contains('dark');
     document.body.style.background = isDark ? '#000' : '#f3f4f6';
 
-    // Toggle icons
-    document.getElementById('moonIcon').classList.toggle('hidden', !isDark);
-    document.getElementById('sunIcon').classList.toggle('hidden', isDark);
+    moonIcon.style.opacity = isDark ? '1' : '0';
+    sunIcon.style.opacity = isDark ? '0' : '1';
   };
+
+  // Ensure correct initial state on load (since <html class="dark">)
+  moonIcon.style.opacity = '1';
+  sunIcon.style.opacity = '0';
 
   document.getElementById('currencySelect').value = currentCurrency;
   document.getElementById('currencySelect').onchange = e => {
@@ -388,5 +509,4 @@
   updateAll();
 </script>
 </body>
-  </html>
-
+</html>
