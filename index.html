@@ -213,19 +213,19 @@
       </div>
     </div>
 
-    <!-- Bottom Motivation with Embedded Visitor Counter -->
+    <!-- Bottom Motivation with Visible Visitor Counter -->
     <div class="md:col-span-3 bg-gradient-to-r from-green-900/30 to-emerald-900/30 border border-green-700 rounded-2xl p-8 text-center mt-8">
       <div class="text-4xl font-bold text-green-400 animate-pulse mb-4">XRP 24/7</div>
       <div class="text-lg text-green-300 mb-6">CRYPTO NEVER SLEEPS • TO THE MOON MOMENTUM</div>
       
-       <div class="text-cyan-400">
-      <p class="text-sm font-semibold mb-2">Total Page Views</p>
-      <!-- Basic working free counter (freecounterstat.com - no registration, HTTPS) -->
-      <img src="https://counter1.optistats.ovh/private/freecounterstat.php?c=87fxqfm966l84an29sfgkbmdynkpfut8" 
-           alt="Visitor Counter" border="0" 
-           class="mx-auto h-8" />
+      <div class="text-cyan-400">
+        <p class="text-sm font-semibold mb-2">Total Page Views</p>
+        <!-- Basic visible counter using your freecounterstat code (working HTTPS) -->
+        <img src="https://counter1.optistats.ovh/private/freecounterstat.php?c=87fxqfm966l84an29sfgkbmdynkpfut8" 
+             alt="Total Page Views" border="0" 
+             class="mx-auto h-6" />
+      </div>
     </div>
-  </div>
 
   </div>
 
@@ -242,7 +242,7 @@
   const cheeringSound = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-stadium-crowd-cheering-1688.mp3');
 
   let currentUSDPrice = 2.02;
-  let priceChange24h = 0;  // Real 24h % change
+  let priceChange24h = 0;
   let previousPrice = currentUSDPrice;
   let dayStartPrice = null;
   let lastDay = null;
@@ -546,5 +546,4 @@
   }, 60000);
 </script>
 </body>
-      </html>
-
+</html>
