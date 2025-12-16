@@ -38,6 +38,7 @@
     .progress-text{position:absolute;top:0;left:0;width:100%;text-align:center;line-height:28px;font-weight:bold;color:#000;text-shadow:0 0 5px #fff;font-size:1.1rem}
     .daily-progress{font-size:0.95rem;margin-top:0.5rem;font-weight:bold}
     .days-to-target{font-size:0.95rem;margin-top:0.3rem;color:#a0aec0}
+    .countdown-to-end{font-size:0.95rem;margin-top:0.3rem;color:#a0aec0;font-style:italic}
     .rocket{position:absolute;bottom:-80px;font-size:4.5rem;opacity:0;transition:opacity .3s, bottom 2.2s ease-in, left 2.2s ease-in;pointer-events:none;z-index:20}
     .rocket.active{opacity:1;bottom:120%}
     .rocket.moonshot{font-size:8rem !important;animation:shake 0.5s infinite}
@@ -128,6 +129,7 @@
         <div class="progress-bar"><div class="progress-fill" id="shortBar" style="width:13.5%"><div class="progress-text" id="shortPercent">13.5% to target</div></div></div>
         <div class="daily-progress" id="shortDaily">Daily: +0.00%</div>
         <div class="days-to-target" id="shortDays">Est. days to target: Calculating...</div>
+        <div class="countdown-to-end" id="shortCountdown">Remaining days to end of timeframe: Calculating...</div>
         <div class="pred-sentiment bullish" id="shortSentiment">Bullish</div>
         <p class="text-xs text-gray-400 mt-4 text-center px-4">Driven by ETF inflows • OTC & Exchanges Supply Shock.</p>
       </div>
@@ -146,6 +148,7 @@
         <div class="progress-bar"><div class="progress-fill" id="medBar" style="width:2%"><div class="progress-text" id="medPercent">2% to target</div></div></div>
         <div class="daily-progress" id="medDaily">Daily: +0.00%</div>
         <div class="days-to-target" id="medDays">Est. days to target: Calculating...</div>
+        <div class="countdown-to-end" id="medCountdown">Remaining days to end of timeframe: Calculating...</div>
         <div class="pred-sentiment extreme-bullish" id="medSentiment">Extreme Bullish</div>
         <p class="text-xs text-gray-400 mt-4 text-center px-4">Global Institutional & Banking mass adoption • XRPL/DeFi growth (Mkt Cap Multiplier).</p>
       </div>
@@ -164,6 +167,7 @@
         <div class="progress-bar"><div class="progress-fill" id="longBar" style="width:0.04%"><div class="progress-text" id="longPercent">0.04% to target</div></div></div>
         <div class="daily-progress" id="longDaily">Daily: +0.00%</div>
         <div class="days-to-target" id="longDays">Est. days to target: Calculating...</div>
+        <div class="countdown-to-end" id="longCountdown">Remaining days to end of timeframe: Calculating...</div>
         <div class="pred-sentiment extreme-bullish" id="longSentiment">Hyper Bullish</div>
         <p class="text-xs text-gray-400 mt-4 text-center px-4">Digital Asset Tokenization • World Digital Currency • Global Bridging Dominance.</p>
       </div>
@@ -240,13 +244,20 @@
 
   const targets = {short: 15, med: 100, long: 5000};
 
+  // Define end dates for each timeframe (Dec 31 of the final year)
+  const timeframeEndDates = {
+    short: new Date('2026-12-31T23:59:59'),
+    med: new Date('2028-12-31T23:59:59'),
+    long: new Date('2030-12-31T23:59:59')
+  };
+
   const rates = { USD:1, AUD:1.51, EUR:0.86, GBP:0.76, JPY:155, CAD:1.39, CHF:0.80, KRW:1460 };
   const symbols = { USD:'$', AUD:'A$', EUR:'€', GBP:'£', JPY:'¥', CAD:'C$', CHF:'Fr', KRW:'₩' };
   let currentCurrency = localStorage.getItem('xrpCurrency') || 'USD';
 
   let lastRocketSide = {};
 
-  // Average daily % change over last 30 days (will be updated from real data if possible)
+  // Average daily % change over last 30 days (fallback)
   let avgDailyChange = 0.5; // fallback placeholder in %
 
   function formatFull(value, sym) {
@@ -267,6 +278,16 @@
     const days = Math.log(target / current) / Math.log(dailyMultiplier);
     if (isNaN(days) || days < 0) return 'N/A';
     return Math.ceil(days) + ' days';
+  }
+
+  // New: Calculate remaining days to end of timeframe
+  function getRemainingDaysToEnd(term) {
+    const endDate = timeframeEndDates[term];
+    const now = new Date();
+    const diffMs = endDate - now;
+    if (diffMs <= 0) return 'Timeframe ended';
+    const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+    return days + ' days';
   }
 
   function triggerMoonshot() {
@@ -372,6 +393,10 @@
         daysEl.textContent = 'Est. days to target: N/A (no growth)';
       }
 
+      // New: Countdown to end of timeframe
+      const countdownEl = document.getElementById(`${term}Countdown`);
+      countdownEl.textContent = 'Predicted Days Remaining: ' + getRemainingDaysToEnd(term);
+
       const dailyProgressPct = dayStartPrice ? ((currentUSDPrice - dayStartPrice) / (targetUSD - dayStartPrice)) * 100 : 0;
 
       const dailyEl = document.getElementById(`${term}Daily`);
@@ -434,7 +459,6 @@
     updateAll();
   }
 
-  // Rest of chart functions unchanged...
   function loadTradingViewChart(interval) {
     const container = document.getElementById('chartContainer');
     container.innerHTML = '';
@@ -512,9 +536,14 @@
   updatePriceAndVolume();
   setInterval(updatePriceAndVolume, 5000);
   updateAll();
+
+  // Update countdown every minute (more efficient than every 5s)
+  setInterval(() => {
+    ['short', 'med', 'long'].forEach(term => {
+      document.getElementById(`${term}Countdown`).textContent = 
+        'Remaining days to end of timeframe: ' + getRemainingDaysToEnd(term);
+    });
+  }, 60000);
 </script>
 </body>
 </html>
-
-
-
