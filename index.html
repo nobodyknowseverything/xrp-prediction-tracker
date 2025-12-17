@@ -36,8 +36,7 @@
     .progress-bar{height:28px;background:#1e293b;border-radius:14px;overflow:hidden;margin:1rem 0;position:relative}
     .progress-fill{height:100%;background:linear-gradient(90deg,#00ffff,#10b981);transition:width 1.5s ease}
     .progress-text{position:absolute;top:0;left:0;width:100%;text-align:center;line-height:28px;font-weight:bold;color:#000;text-shadow:0 0 5px #fff;font-size:1.1rem}
-    .daily-progress{font-size:0.95rem;margin-top:0.5rem;font-weight:bold}
-    .days-to-target{font-size:0.95rem;margin-top:0.3rem;color:#a0aec0}
+    .days-to-target{font-size:0.95rem;margin-top:0.5rem;color:#a0aec0}
     .countdown-to-end{font-size:0.95rem;margin-top:0.3rem;color:#a0aec0;font-style:italic}
     .rocket{position:absolute;bottom:-80px;font-size:4.5rem;opacity:0;transition:opacity .3s, bottom 2.2s ease-in, left 2.2s ease-in;pointer-events:none;z-index:20}
     .rocket.active{opacity:1;bottom:120%}
@@ -127,7 +126,6 @@
         </div>
         <div class="pred-target" id="shortTarget">$15+</div>
         <div class="progress-bar"><div class="progress-fill" id="shortBar" style="width:13.5%"><div class="progress-text" id="shortPercent">13.5% to target</div></div></div>
-        <div class="daily-progress" id="shortDaily">24h Change: +0.00%</div>
         <div class="days-to-target" id="shortDays">Est. days to target: Calculating...</div>
         <div class="countdown-to-end" id="shortCountdown">Predicted Days Remaining: Calculating...</div>
         <div class="pred-sentiment bullish" id="shortSentiment">Bullish</div>
@@ -146,7 +144,6 @@
         </div>
         <div class="pred-target" id="medTarget">$100+</div>
         <div class="progress-bar"><div class="progress-fill" id="medBar" style="width:2%"><div class="progress-text" id="medPercent">2% to target</div></div></div>
-        <div class="daily-progress" id="medDaily">24h Change: +0.00%</div>
         <div class="days-to-target" id="medDays">Est. days to target: Calculating...</div>
         <div class="countdown-to-end" id="medCountdown">Predicted Days Remaining: Calculating...</div>
         <div class="pred-sentiment extreme-bullish" id="medSentiment">Extreme Bullish</div>
@@ -165,7 +162,6 @@
         </div>
         <div class="pred-target" id="longTarget">$5,000+</div>
         <div class="progress-bar"><div class="progress-fill" id="longBar" style="width:0.04%"><div class="progress-text" id="longPercent">0.04% to target</div></div></div>
-        <div class="daily-progress" id="longDaily">24h Change: +0.00%</div>
         <div class="days-to-target" id="longDays">Est. days to target: Calculating...</div>
         <div class="countdown-to-end" id="longCountdown">Predicted Days Remaining: Calculating...</div>
         <div class="pred-sentiment extreme-bullish" id="longSentiment">Hyper Bullish</div>
@@ -259,7 +255,7 @@
   let lastRocketSide = {};
   let avgDailyChange = 0.5;
 
-  // New state tracking for hysteresis
+  // Hysteresis state for alerts
   let currentPumpState = false;
   let currentMoonshotState = false;
 
@@ -369,7 +365,7 @@
     let newPumpState = currentPumpState;
     let newMoonshotState = currentMoonshotState;
 
-    // Hysteresis logic
+    // Hysteresis logic for Pump and Moonshot
     if (change24hPct > 10) {
       newMoonshotState = true;
       newPumpState = false;
@@ -387,7 +383,7 @@
       newMoonshotState = false;
     }
 
-    // Detect fresh Moonshot entry for confetti + sound
+    // Fresh Moonshot entry → confetti + sound
     if (newMoonshotState && !currentMoonshotState) {
       confetti({particleCount: 300, spread: 120, origin: { y: 0.6 }});
       rocketSound.currentTime = 0; rocketSound.play();
@@ -415,10 +411,6 @@
         daysEl.textContent = 'Est. days to target: N/A (no growth)';
       }
 
-      const dailyEl = document.getElementById(`${term}Daily`);
-      dailyEl.textContent = '24h Change: ' + (change24hPct > 0 ? '+' : '') + change24hPct.toFixed(2) + '%';
-      dailyEl.className = 'daily-progress ' + (change24hPct > 0 ? 'text-green-400' : 'text-red-400');
-
       const sentiment = document.getElementById(`${term}Sentiment`);
       sentiment.originalText = sentiment.originalText || sentiment.textContent;
 
@@ -441,7 +433,7 @@
       }
     });
 
-    // Rocket animation only on > +2% change
+    // Rocket animation on > +2% 24h change
     if (change24hPct > 2.0) {
       ['short', 'med', 'long'].forEach(term => {
         const rocket = document.querySelector(`#${term}Card .rocket`);
@@ -450,12 +442,12 @@
         rocket.classList.remove('left', 'right');
         rocket.classList.add(side);
         rocket.classList.remove('active');
-        void rocket.offsetWidth; // reflow
+        void rocket.offsetWidth;
         rocket.classList.add('active');
       });
     }
 
-    // Update global state
+    // Update state
     currentPumpState = newPumpState;
     currentMoonshotState = newMoonshotState;
 
