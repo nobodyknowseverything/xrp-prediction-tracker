@@ -213,14 +213,13 @@
       </div>
     </div>
 
-    <!-- Bottom Motivation with Visible Visitor Counter -->
+    <!-- Bottom Motivation -->
     <div class="md:col-span-3 bg-gradient-to-r from-green-900/30 to-emerald-900/30 border border-green-700 rounded-2xl p-8 text-center mt-8">
       <div class="text-4xl font-bold text-green-400 animate-pulse mb-4">XRP 24/7</div>
       <div class="text-lg text-green-300 mb-6">CRYPTO NEVER SLEEPS • TO THE MOON MOMENTUM</div>
       
       <div class="text-cyan-400">
         <p class="text-sm font-semibold mb-2">Total Page Views</p>
-        <!-- Basic visible counter using your freecounterstat code (working HTTPS) -->
         <img src="https://counter1.optistats.ovh/private/freecounterstat.php?c=87fxqfm966l84an29sfgkbmdynkpfut8" 
              alt="Total Page Views" border="0" 
              class="mx-auto h-6" />
@@ -244,10 +243,6 @@
   let currentUSDPrice = 2.02;
   let priceChange24h = 0;
   let previousPrice = currentUSDPrice;
-  let dayStartPrice = null;
-  let lastDay = null;
-
-  window.moonshotTriggeredToday = false;
 
   const targets = {short: 15, med: 100, long: 5000};
 
@@ -262,8 +257,11 @@
   let currentCurrency = localStorage.getItem('xrpCurrency') || 'USD';
 
   let lastRocketSide = {};
-
   let avgDailyChange = 0.5;
+
+  // New state tracking for hysteresis
+  let currentPumpState = false;
+  let currentMoonshotState = false;
 
   function formatFull(value, sym) {
     return sym + value.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -292,22 +290,6 @@
     if (diffMs <= 0) return 'Timeframe ended';
     const days = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
     return days + ' days';
-  }
-
-  function triggerMoonshot() {
-    ['short', 'med', 'long'].forEach(term => {
-      const rocket = document.querySelector(`#${term}Card .rocket`);
-      rocket.classList.add('moonshot', 'active');
-      setTimeout(() => rocket.classList.remove('moonshot'), 6000);
-      const sentiment = document.getElementById(`${term}Sentiment`);
-      sentiment.textContent = 'MOONSHOT IN PROGRESS!! 🌕🚀🌕';
-      sentiment.classList.add('moonshot-mode');
-    });
-
-    confetti({particleCount: 300, spread: 120, origin: { y: 0.6 }});
-
-    rocketSound.currentTime = 0; rocketSound.play();
-    setTimeout(() => { cheeringSound.currentTime = 0; cheeringSound.play(); }, 1200);
   }
 
   const myHoldingsInput = document.getElementById('myHoldings');
@@ -362,16 +344,10 @@
     }
   }
 
-    // Remember My Moon Calculator values using localStorage
-  // Load saved values on page load
-  if (localStorage.getItem('myHoldings')) {
-    myHoldingsInput.value = localStorage.getItem('myHoldings');
-  }
-  if (localStorage.getItem('myMoonPrice')) {
-    myMoonPriceInput.value = localStorage.getItem('myMoonPrice');
-  }
+  // LocalStorage for My Moon Calculator
+  if (localStorage.getItem('myHoldings')) myHoldingsInput.value = localStorage.getItem('myHoldings');
+  if (localStorage.getItem('myMoonPrice')) myMoonPriceInput.value = localStorage.getItem('myMoonPrice');
 
-  // Save values whenever user changes them
   myHoldingsInput.addEventListener('input', () => {
     localStorage.setItem('myHoldings', myHoldingsInput.value);
     updateMyMoonCalculator();
@@ -382,15 +358,41 @@
     updateMyMoonCalculator();
   });
 
-  // Initial update with saved values
   updateMyMoonCalculator();
 
   function updateAll() {
     const rate = rates[currentCurrency];
     const sym = symbols[currentCurrency];
     const displayPrice = (currentUSDPrice * rate).toFixed(4);
-
     const change24hPct = priceChange24h;
+
+    let newPumpState = currentPumpState;
+    let newMoonshotState = currentMoonshotState;
+
+    // Hysteresis logic
+    if (change24hPct > 10) {
+      newMoonshotState = true;
+      newPumpState = false;
+    } else if (change24hPct >= 8 && currentMoonshotState) {
+      newMoonshotState = true;
+      newPumpState = false;
+    } else if (change24hPct > 5) {
+      newPumpState = true;
+      newMoonshotState = false;
+    } else if (change24hPct >= 5 && currentPumpState) {
+      newPumpState = true;
+      newMoonshotState = false;
+    } else {
+      newPumpState = false;
+      newMoonshotState = false;
+    }
+
+    // Detect fresh Moonshot entry for confetti + sound
+    if (newMoonshotState && !currentMoonshotState) {
+      confetti({particleCount: 300, spread: 120, origin: { y: 0.6 }});
+      rocketSound.currentTime = 0; rocketSound.play();
+      setTimeout(() => { cheeringSound.currentTime = 0; cheeringSound.play(); }, 1200);
+    }
 
     ['short', 'med', 'long'].forEach(term => {
       document.getElementById(`${term}Current`).textContent = sym + displayPrice;
@@ -400,10 +402,7 @@
 
       const targetUSD = targets[term];
       const overallPercent = Math.min(100, (currentUSDPrice / targetUSD) * 100);
-
-      const formattedTarget = targetUSD.toLocaleString() + '+';
-      document.getElementById(`${term}Target`).textContent = '$' + formattedTarget;
-
+      document.getElementById(`${term}Target`).textContent = '$' + targetUSD.toLocaleString() + '+';
       document.getElementById(`${term}Bar`).style.width = overallPercent + '%';
       document.getElementById(`${term}Percent`).textContent = overallPercent.toFixed(2) + '% to target';
 
@@ -422,19 +421,28 @@
 
       const sentiment = document.getElementById(`${term}Sentiment`);
       sentiment.originalText = sentiment.originalText || sentiment.textContent;
-      if (change24hPct >= 5) {
+
+      const rocket = document.querySelector(`#${term}Card .rocket`);
+
+      if (newMoonshotState) {
         sentiment.textContent = 'MOONSHOT IN PROGRESS!! 🌕🚀🌕';
+        sentiment.classList.remove('pump-detected');
         sentiment.classList.add('moonshot-mode');
-      } else if (change24hPct >= 3) {
+        rocket.classList.add('moonshot', 'active');
+      } else if (newPumpState) {
         sentiment.textContent = 'PUMP DETECTED! 🚀';
+        sentiment.classList.remove('moonshot-mode');
         sentiment.classList.add('pump-detected');
+        rocket.classList.remove('moonshot');
       } else {
         sentiment.textContent = sentiment.originalText;
         sentiment.classList.remove('pump-detected', 'moonshot-mode');
+        rocket.classList.remove('moonshot');
       }
     });
 
-    if (change24hPct > 0.05) {
+    // Rocket animation only on > +2% change
+    if (change24hPct > 2.0) {
       ['short', 'med', 'long'].forEach(term => {
         const rocket = document.querySelector(`#${term}Card .rocket`);
         const side = lastRocketSide[term] === 'left' ? 'right' : 'left';
@@ -442,13 +450,16 @@
         rocket.classList.remove('left', 'right');
         rocket.classList.add(side);
         rocket.classList.remove('active');
-        void rocket.offsetWidth;
+        void rocket.offsetWidth; // reflow
         rocket.classList.add('active');
       });
     }
 
-    previousPrice = currentUSDPrice;
+    // Update global state
+    currentPumpState = newPumpState;
+    currentMoonshotState = newMoonshotState;
 
+    previousPrice = currentUSDPrice;
     updateMyMoonCalculator();
   }
 
@@ -551,13 +562,12 @@
   setInterval(updatePriceAndVolume, 5000);
   updateAll();
 
-  // Force immediate countdown update on page load
+  // Countdown updates
   ['short', 'med', 'long'].forEach(term => {
     document.getElementById(`${term}Countdown`).textContent = 
       'Predicted Days Remaining: ' + getRemainingDaysToEnd(term);
   });
 
-  // Update countdown every minute
   setInterval(() => {
     ['short', 'med', 'long'].forEach(term => {
       document.getElementById(`${term}Countdown`).textContent = 
@@ -566,4 +576,4 @@
   }, 60000);
 </script>
 </body>
-  </html>
+</html>
