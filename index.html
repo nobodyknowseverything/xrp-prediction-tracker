@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>XRP Prediction • Created with Grok</title>
+  <title>XRP Live • Created with Grok</title>
   <link rel="icon" href="data:,">
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
@@ -67,6 +67,19 @@
       .moon-stat-value{font-size:1.1rem;}
       .input-label{width:100%;text-align:center;}
       input[type="number"]{width:100%;max-width:300px;}
+    }
+    .action-btn {
+      transition: all 0.25s ease;
+    }
+    .action-btn:hover {
+      transform: translateY(-2px);
+    }
+    .action-btn:active {
+      transform: scale(0.96);
+    }
+    .liked {
+      background: linear-gradient(45deg, #7c3aed, #c084fc) !important;
+      color: white !important;
     }
   </style>
 </head>
@@ -207,13 +220,37 @@
           <div class="moon-stat-value" id="myMoonValue">$100,000.00</div>
         </div>
       </div>
+
+      <!-- Like + Share to X -->
+      <div class="flex flex-wrap justify-center gap-6 mt-10 pt-6 border-t border-cyan-900/50">
+        <!-- Like Button -->
+        <button id="likeBtn" class="action-btn flex items-center gap-3 px-8 py-4 bg-gray-800 hover:bg-gray-700 rounded-full font-medium shadow-lg transition-all">
+          <span id="likeIcon" class="text-3xl">👍</span>
+          <span id="likeCount" class="text-2xl font-bold text-cyan-300">0</span>
+          <span class="text-gray-300 text-lg">Likes</span>
+        </button>
+
+        <!-- Share to X Button -->
+        <button id="shareXBtn" class="action-btn flex items-center gap-3 px-8 py-4 bg-black hover:bg-gray-900 border border-white/30 rounded-full font-medium shadow-lg transition-all">
+          <svg class="w-7 h-7" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/>
+          </svg>
+          <span class="text-white text-lg">Share on X</span>
+        </button>
+      </div>
+
     </div>
 
     <!-- Bottom Motivation -->
     <div class="md:col-span-3 bg-gradient-to-r from-green-900/30 to-emerald-900/30 border border-green-700 rounded-2xl p-8 text-center mt-8">
       <div class="text-4xl font-bold text-green-400 animate-pulse mb-4">XRP 24/7</div>
-      <div class="text-lg text-green-300 mb-6">CRYPTO NEVER SLEEPS • XRP MOON PREDICTION</div>
+      <div class="text-lg text-green-300 mb-6">CRYPTO NEVER SLEEPS • TO THE MOON MOMENTUM</div>
       
+      <div class="text-cyan-400">
+        <p class="text-sm font-semibold mb-2">Total Page Views</p>
+        <img src="https://counter1.optistats.ovh/private/freecounterstat.php?c=87fxqfm966l84an29sfgkbmdynkpfut8" 
+             alt="Total Page Views" border="0" 
+             class="mx-auto h-6" />
       </div>
     </div>
 
@@ -543,10 +580,8 @@
     const isDarkNow = document.documentElement.classList.contains('dark');
     document.body.style.background = isDarkNow ? '#000' : '#f3f4f6';
 
-    // Save preference
     localStorage.setItem('xrpTheme', isDarkNow ? 'dark' : 'light');
 
-    // Update icons
     document.querySelector('.icon-moon').style.display = isDarkNow ? 'block' : 'none';
     document.querySelector('.icon-sun').style.display = isDarkNow ? 'none' : 'block';
   };
@@ -563,9 +598,81 @@
     el.originalText = el.textContent;
   });
 
+  // ────────────────────────────────────────────────
+  //           LIKE BUTTON + SHARE TO X
+  // ────────────────────────────────────────────────
+
+  const LIKE_NAMESPACE = "xrp-moon-tracker";
+  const LIKE_KEY = "total-likes-jan2026";
+  
+  const likeBtn = document.getElementById('likeBtn');
+  const likeCountEl = document.getElementById('likeCount');
+  const likeIcon = document.getElementById('likeIcon');
+  const shareXBtn = document.getElementById('shareXBtn');
+
+  // Load current like count
+  async function loadLikeCount() {
+    try {
+      const res = await fetch(`https://api.countapi.xyz/get/${LIKE_NAMESPACE}/${LIKE_KEY}`);
+      const data = await res.json();
+      likeCountEl.textContent = data.value || 0;
+    } catch(e) {
+      likeCountEl.textContent = "—";
+    }
+  }
+
+  // Like once per session
+  let hasLiked = sessionStorage.getItem('xrpMoonLiked') === 'true';
+
+  if (hasLiked) {
+    likeIcon.textContent = '💜';
+    likeBtn.classList.add('liked');
+    likeBtn.disabled = true;
+  }
+
+  likeBtn.addEventListener('click', async () => {
+    if (hasLiked) return;
+
+    try {
+      const res = await fetch(`https://api.countapi.xyz/hit/${LIKE_NAMESPACE}/${LIKE_KEY}`);
+      const data = await res.json();
+      
+      likeCountEl.textContent = data.value;
+      likeIcon.textContent = '💜';
+      likeBtn.classList.add('liked');
+      
+      confetti({
+        particleCount: 80,
+        spread: 80,
+        origin: { y: 0.7 },
+        colors: ['#a78bfa', '#c084fc', '#ddd6fe']
+      });
+
+      sessionStorage.setItem('xrpMoonLiked', 'true');
+      hasLiked = true;
+      likeBtn.disabled = true;
+    } catch(e) {
+      alert("Couldn't register like - try again later");
+    }
+  });
+
+  // Share to X
+  shareXBtn.addEventListener('click', () => {
+    const price = currentUSDPrice.toFixed(4);
+    const text = `XRP right now: $${price} 🚀\n` +
+                 `Targets: $15+ • $100+ • $5,000+ 🌕\n` +
+                 `Check this bullish tracker: ${window.location.href}\n\n` +
+                 `#XRP #XRPArmy #ToTheMoon`;
+
+    const url = `https://x.com/intent/tweet?text=${encodeURIComponent(text)}`;
+    window.open(url, '_blank', 'width=580,height=460');
+  });
+
+  // Initialize
   updatePriceAndVolume();
   setInterval(updatePriceAndVolume, 5000);
   updateAll();
+  loadLikeCount();
 
   // Countdown updates
   ['short', 'med', 'long'].forEach(term => {
@@ -579,7 +686,7 @@
         'Predicted Days Remaining: ' + getRemainingDaysToEnd(term);
     });
   }, 60000);
+
 </script>
 </body>
 </html>
-
