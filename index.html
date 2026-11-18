@@ -62,7 +62,7 @@
         <div class="text-2xl font-bold text-green-400">$750+</div>
         <div class="text-sm mt-2" id="shortPct">Calculating...</div>
         <div class="text-xs mt-1 opacity-70" id="shortDays">Estimated days to target: Calculating...</div>
-        <div class="text-xs opacity-70" id="shortRemain">Predicted Days Remaining: Calculating...</div>
+        <div class="text-xs opacity-70" id="shortRemain">Days Remaining in period: Calculating...</div>
         <div class="mt-4 inline-block px-3 py-1 rounded-full text-xs text-white sentiment-bullish">Bullish</div>
         <p class="text-xs opacity-70 mt-3">ETF inflows • Supply shock</p>
       </div>
@@ -72,7 +72,7 @@
         <div class="text-2xl font-bold text-purple-400">$5,000+</div>
         <div class="text-sm mt-2" id="medPct">Calculating...</div>
         <div class="text-xs mt-1 opacity-70" id="medDays">Estimated days to target: Calculating...</div>
-        <div class="text-xs opacity-70" id="medRemain">Predicted Days Remaining: Calculating...</div>
+        <div class="text-xs opacity-70" id="medRemain">Days Remaining in period: Calculating...</div>
         <div class="mt-4 inline-block px-3 py-1 rounded-full text-xs text-white sentiment-extreme">Extreme Bullish</div>
         <p class="text-xs opacity-70 mt-3">Institutional adoption</p>
       </div>
@@ -82,7 +82,7 @@
         <div class="text-2xl font-bold text-amber-400">$10,000+</div>
         <div class="text-sm mt-2" id="longPct">Calculating...</div>
         <div class="text-xs mt-1 opacity-70" id="longDays">Estimated days to target: Calculating...</div>
-        <div class="text-xs opacity-70" id="longRemain">Predicted Days Remaining: Calculating...</div>
+        <div class="text-xs opacity-70" id="longRemain">Days Remaining in period: Calculating...</div>
         <div class="mt-4 inline-block px-3 py-1 rounded-full text-xs text-white sentiment-hyper">Hyper Bullish</div>
         <p class="text-xs opacity-70 mt-3">Global digital currency</p>
       </div>
@@ -121,8 +121,12 @@ let priceChange24h = 0;
 let currentCurrency = localStorage.getItem('xrpCurrency') || 'USD';
 const rates = { USD:1, AUD:1.52, EUR:0.92, GBP:0.79, CAD:1.36, JPY:149 };
 
-// Simple daily growth assumption for the estimate (you can change this number)
-const ASSUMED_DAILY_GROWTH = 0.004; // 0.4% per day average
+// Period end dates (calendar-based)
+const periodEnds = {
+  short: new Date('2026-12-31T23:59:59'),
+  med:   new Date('2028-12-31T23:59:59'),
+  long:  new Date('2030-12-31T23:59:59')
+};
 
 document.getElementById('currencySelect').value = currentCurrency;
 document.getElementById('currencySelect').onchange = e => {
@@ -141,14 +145,14 @@ function formatPrice(usd) {
   if (!usd) return 'Loading...';
   const val = usd * (rates[currentCurrency] || 1);
   const symbols = {USD:'$',AUD:'A$',EUR:'€',GBP:'£',CAD:'C$',JPY:'¥'};
-  const symbol = symbols[currentCurrency] || currentCurrency + ' ';
-  return symbol + val.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:4});
+  return (symbols[currentCurrency] || currentCurrency + ' ') + val.toLocaleString(undefined, {minimumFractionDigits:2, maximumFractionDigits:4});
 }
 
-function estimateDays(current, target) {
-  if (!current || current >= target) return 'Already reached or n/a';
-  const days = Math.log(target / current) / Math.log(1 + ASSUMED_DAILY_GROWTH);
-  return Math.round(days).toLocaleString();
+function daysUntil(endDate) {
+  const now = new Date();
+  const diff = endDate - now;
+  if (diff <= 0) return 'Period ended';
+  return Math.ceil(diff / (1000 * 60 * 60 * 24));
 }
 
 function updateAll() {
@@ -166,14 +170,15 @@ function updateAll() {
     document.getElementById('medPct').textContent = ((5000 / currentUSDPrice - 1) * 100).toFixed(1) + '% to target';
     document.getElementById('longPct').textContent = ((10000 / currentUSDPrice - 1) * 100).toFixed(2) + '% to target';
 
-    // Days estimates
-    document.getElementById('shortDays').textContent = 'Estimated days to target: ' + estimateDays(currentUSDPrice, 750);
-    document.getElementById('medDays').textContent = 'Estimated days to target: ' + estimateDays(currentUSDPrice, 5000);
-    document.getElementById('longDays').textContent = 'Estimated days to target: ' + estimateDays(currentUSDPrice, 10000);
+    // Calendar-based days remaining in the period
+    document.getElementById('shortRemain').textContent = 'Days Remaining in period: ' + daysUntil(periodEnds.short);
+    document.getElementById('medRemain').textContent = 'Days Remaining in period: ' + daysUntil(periodEnds.med);
+    document.getElementById('longRemain').textContent = 'Days Remaining in period: ' + daysUntil(periodEnds.long);
 
-    document.getElementById('shortRemain').textContent = 'Predicted Days Remaining: ' + estimateDays(currentUSDPrice, 750);
-    document.getElementById('medRemain').textContent = 'Predicted Days Remaining: ' + estimateDays(currentUSDPrice, 5000);
-    document.getElementById('longRemain').textContent = 'Predicted Days Remaining: ' + estimateDays(currentUSDPrice, 10000);
+    // Keep a simple price-based estimate as secondary info (optional)
+    document.getElementById('shortDays').textContent = 'Price-based estimate: ~' + Math.round(Math.log(750 / currentUSDPrice) / Math.log(1.004)) + ' days (at 0.4%/day)';
+    document.getElementById('medDays').textContent = 'Price-based estimate: ~' + Math.round(Math.log(5000 / currentUSDPrice) / Math.log(1.004)) + ' days (at 0.4%/day)';
+    document.getElementById('longDays').textContent = 'Price-based estimate: ~' + Math.round(Math.log(10000 / currentUSDPrice) / Math.log(1.004)) + ' days (at 0.4%/day)';
   }
 
   const holdings = parseFloat(document.getElementById('myHoldings').value) || 0;
@@ -185,7 +190,7 @@ function updateAll() {
   }
 }
 
-// Shared price fetch (same as Signal Tracker)
+// Shared price fetch
 async function updatePriceAndVolume() {
   try {
     const r = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=XRPUSDT');
