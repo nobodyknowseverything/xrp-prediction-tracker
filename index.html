@@ -121,11 +121,11 @@
       <div class="pred-body">
         <div class="rocket left">🚀</div>
         <div class="pred-current">
-          <span class="pred-current-price" id="shortCurrent">$2.02</span>
-          <span class="pred-current-change" id="shortChange">+0.00%</span>
+          <span class="pred-current-price" id="shortCurrent">Loading...</span>
+          <span class="pred-current-change" id="shortChange">--</span>
         </div>
         <div class="pred-target" id="shortTarget">$750+</div>
-        <div class="progress-bar"><div class="progress-fill" id="shortBar" style="width:13.5%"><div class="progress-text" id="shortPercent">13.5% to target</div></div></div>
+        <div class="progress-bar"><div class="progress-fill" id="shortBar" style="width:0%"><div class="progress-text" id="shortPercent">--% to target</div></div></div>
         <div class="days-to-target" id="shortDays">Estimated days to target: Calculating...</div>
         <div class="countdown-to-end" id="shortCountdown">Predicted Days Remaining: Calculating...</div>
         <div class="pred-sentiment bullish" id="shortSentiment">Bullish</div>
@@ -139,11 +139,11 @@
       <div class="pred-body">
         <div class="rocket right">🚀</div>
         <div class="pred-current">
-          <span class="pred-current-price" id="medCurrent">$2.02</span>
-          <span class="pred-current-change" id="medChange">+0.00%</span>
+          <span class="pred-current-price" id="medCurrent">Loading...</span>
+          <span class="pred-current-change" id="medChange">--</span>
         </div>
         <div class="pred-target" id="medTarget">$5,000+</div>
-        <div class="progress-bar"><div class="progress-fill" id="medBar" style="width:2%"><div class="progress-text" id="medPercent">2% to target</div></div></div>
+        <div class="progress-bar"><div class="progress-fill" id="medBar" style="width:0%"><div class="progress-text" id="medPercent">--% to target</div></div></div>
         <div class="days-to-target" id="medDays">Estimated days to target: Calculating...</div>
         <div class="countdown-to-end" id="medCountdown">Predicted Days Remaining: Calculating...</div>
         <div class="pred-sentiment extreme-bullish" id="medSentiment">Extreme Bullish</div>
@@ -157,11 +157,11 @@
       <div class="pred-body">
         <div class="rocket left">🚀</div>
         <div class="pred-current">
-          <span class="pred-current-price" id="longCurrent">$2.02</span>
-          <span class="pred-current-change" id="longChange">+0.00%</span>
+          <span class="pred-current-price" id="longCurrent">Loading...</span>
+          <span class="pred-current-change" id="longChange">--</span>
         </div>
         <div class="pred-target" id="longTarget">$10,000+</div>
-        <div class="progress-bar"><div class="progress-fill" id="longBar" style="width:0.04%"><div class="progress-text" id="longPercent">0.04% to target</div></div></div>
+        <div class="progress-bar"><div class="progress-fill" id="longBar" style="width:0%"><div class="progress-text" id="longPercent">--% to target</div></div></div>
         <div class="days-to-target" id="longDays">Estimated days to target: Calculating...</div>
         <div class="countdown-to-end" id="longCountdown">Predicted Days Remaining: Calculating...</div>
         <div class="pred-sentiment extreme-bullish" id="longSentiment">Hyper Bullish</div>
@@ -183,12 +183,12 @@
         <input type="number" id="myMoonPrice" value="100" min="0.1" step="0.01">
       </div>
 
-      <div class="portfolio-value" id="myCurrentValue">$2,020.00</div>
+      <div class="portfolio-value" id="myCurrentValue">Loading...</div>
 
       <div class="my-moon-progress">
         <div class="my-moon-bar">
-          <div class="my-moon-fill" id="myMoonFill" style="width:2%"></div>
-          <div class="my-moon-text" id="myMoonText">2% to your moon!</div>
+          <div class="my-moon-fill" id="myMoonFill" style="width:0%"></div>
+          <div class="my-moon-text" id="myMoonText">--% to your moon!</div>
         </div>
       </div>
       <div class="moon-message" id="myMoonMessage">Keep holding strong! 💎🙌</div>
@@ -217,10 +217,8 @@
       <div class="text-cyan-400">
         <p class="text-sm font-semibold mb-2">Total Page Views</p>
         <img src="https://counter1.optistats.ovh/private/freecounterstat.php?c=87fxqfm966l84an29sfgkbmdynkpfut8"
-
               alt="Total Page Views" border="0" 
              class="mx-auto h-6" />
-      
       </div>
     </div>
 
@@ -238,9 +236,9 @@
   const rocketSound = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-rocket-launch-1668.mp3');
   const cheeringSound = new Audio('https://assets.mixkit.co/sfx/preview/mixkit-stadium-crowd-cheering-1688.mp3');
 
-  let currentUSDPrice = 2.02;
+  let currentUSDPrice = null;
   let priceChange24h = 0;
-  let previousPrice = currentUSDPrice;
+  let previousPrice = null;
 
   const targets = {short: 750, med: 5000, long: 10000};
 
@@ -250,33 +248,26 @@
     long: new Date('2030-12-31T23:59:59')
   };
 
-  let rates = { USD:1, AUD:1.46, EUR:0.95, GBP:0.79, JPY:155, CAD:1.39, CHF:0.88, KRW:1460 }; // fallback / approximate current rates
+  let rates = { USD:1, AUD:1.46, EUR:0.95, GBP:0.79, JPY:155, CAD:1.39, CHF:0.88, KRW:1460 };
   const symbols = { USD:'$', AUD:'A$', EUR:'€', GBP:'£', JPY:'¥', CAD:'C$', CHF:'Fr', KRW:'₩' };
   let currentCurrency = localStorage.getItem('xrpCurrency') || 'USD';
 
   let lastRocketSide = {};
   let avgDailyChange = 0.5;
 
-  // Hysteresis state for alerts
   let currentPumpState = false;
   let currentMoonshotState = false;
 
   async function updateExchangeRates() {
     try {
-      const API_KEY = '2e28bae41916290695aca1ce';  // Your ExchangeRate-API key
-
+      const API_KEY = '2e28bae41916290695aca1ce';
       const response = await fetch(`https://v6.exchangerate-api.com/v6/${API_KEY}/latest/USD`);
       const data = await response.json();
-
       if (data.result === 'success') {
         rates = { USD: 1, ...data.conversion_rates };
-        console.log('Exchange rates loaded successfully (USD base)');
-      } else {
-        console.error('API error:', data['error-type'] || data);
       }
     } catch (e) {
-      console.error('Fetch failed:', e);
-      // quietly keep using fallback rates
+      console.error('Exchange rates fetch failed:', e);
     }
     updateAll();
   }
@@ -321,6 +312,10 @@
   const myMoonValue = document.getElementById('myMoonValue');
 
   function updateMyMoonCalculator() {
+    if (currentUSDPrice === null) {
+      myCurrentValue.textContent = 'Loading...';
+      return;
+    }
     const holdings = parseFloat(myHoldingsInput.value) || 0;
     const moonPriceUSD = parseFloat(myMoonPriceInput.value) || 0;
     const rate = rates[currentCurrency];
@@ -334,7 +329,6 @@
 
     myMoonValue.textContent = formatAbbreviated(moonValue, sym);
     myMoonPriceDisplay.textContent = formatFull(moonPriceInCurrency, sym);
-
     myHoldingsDisplay.textContent = holdings.toLocaleString() + ' XRP';
 
     const currentPriceInCurrency = currentUSDPrice * rate;
@@ -362,7 +356,6 @@
     }
   }
 
-  // LocalStorage for My Moon Calculator
   if (localStorage.getItem('myHoldings')) myHoldingsInput.value = localStorage.getItem('myHoldings');
   if (localStorage.getItem('myMoonPrice')) myMoonPriceInput.value = localStorage.getItem('myMoonPrice');
 
@@ -376,9 +369,9 @@
     updateMyMoonCalculator();
   });
 
-  updateMyMoonCalculator();
-
   function updateAll() {
+    if (currentUSDPrice === null) return;
+
     const rate = rates[currentCurrency];
     const sym = symbols[currentCurrency];
     const displayPrice = (currentUSDPrice * rate).toFixed(4);
@@ -476,20 +469,32 @@
   async function updatePriceAndVolume() {
     try {
       const r = await fetch('https://api.binance.com/api/v3/ticker/24hr?symbol=XRPUSDT');
-      if(r.ok){
+      if (r.ok) {
         const d = await r.json();
-        currentUSDPrice = parseFloat(d.lastPrice);
-        priceChange24h = parseFloat(d.priceChangePercent);
+        if (d.lastPrice) {
+          currentUSDPrice = parseFloat(d.lastPrice);
+          priceChange24h = parseFloat(d.priceChangePercent) || 0;
+          updateAll();
+          return;
+        }
       }
-    } catch(e) {
-      try {
-        const r = await fetch('https://api.coingecko.com/api/v3/coins/ripple');
+    } catch (e) {
+      console.warn('Binance failed, trying CoinGecko...', e);
+    }
+
+    try {
+      const r = await fetch('https://api.coingecko.com/api/v3/simple/price?ids=ripple&vs_currencies=usd&include_24hr_change=true');
+      if (r.ok) {
         const d = await r.json();
-        currentUSDPrice = d.market_data.current_price.usd;
-        priceChange24h = d.market_data.price_change_percentage_24h || 0;
-      } catch(ee) {
-        priceChange24h = 0;
+        if (d.ripple?.usd) {
+          currentUSDPrice = d.ripple.usd;
+          priceChange24h = d.ripple.usd_24h_change || 0;
+          updateAll();
+          return;
+        }
       }
+    } catch (ee) {
+      console.error('Both price sources failed', ee);
     }
     updateAll();
   }
@@ -550,7 +555,6 @@
   document.getElementById('medCard').onclick = () => showOverlay('D');
   document.getElementById('longCard').onclick = () => showOverlay('W');
 
-  // === Theme Toggle with Persistence ===
   const savedTheme = localStorage.getItem('xrpTheme');
   if (savedTheme === 'light') {
     document.documentElement.classList.remove('dark');
@@ -560,7 +564,6 @@
     document.body.style.background = '#000';
   }
 
-  // Update toggle icons to match saved state
   const isDark = document.documentElement.classList.contains('dark');
   document.querySelector('.icon-moon').style.display = isDark ? 'block' : 'none';
   document.querySelector('.icon-sun').style.display = isDark ? 'none' : 'block';
@@ -569,9 +572,7 @@
     document.documentElement.classList.toggle('dark');
     const isDarkNow = document.documentElement.classList.contains('dark');
     document.body.style.background = isDarkNow ? '#000' : '#f3f4f6';
-
     localStorage.setItem('xrpTheme', isDarkNow ? 'dark' : 'light');
-
     document.querySelector('.icon-moon').style.display = isDarkNow ? 'block' : 'none';
     document.querySelector('.icon-sun').style.display = isDarkNow ? 'none' : 'block';
   };
@@ -588,13 +589,11 @@
     el.originalText = el.textContent;
   });
 
-  // Initial calls
-  updateExchangeRates();            // Get fresh forex rates on load
-  updatePriceAndVolume();           // Get XRP price on load
-  setInterval(updatePriceAndVolume, 5000);     // XRP price every 5 seconds
-  setInterval(updateExchangeRates, 3600000);   // Forex rates every hour
+  updateExchangeRates();
+  updatePriceAndVolume();
+  setInterval(updatePriceAndVolume, 10000);
+  setInterval(updateExchangeRates, 3600000);
 
-  // Countdown updates
   ['short', 'med', 'long'].forEach(term => {
     document.getElementById(`${term}Countdown`).textContent = 
       'Predicted Days Remaining: ' + getRemainingDaysToEnd(term);
